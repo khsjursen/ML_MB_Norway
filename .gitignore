@@ -1,0 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Oct  1 20:18:22 2020
+
+@author: kasj
+"""
+
+.spyproject
+__pycache__
+tests_tutorials.py
