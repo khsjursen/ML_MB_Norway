@@ -79,6 +79,9 @@ data_crop = data_crop_alt[data_crop_alt['diff_east'].notna()]
 # Check balances:
 data_crop['diff_netto'] = data_crop['balance_netto'] - (data_crop['balance_winter'] + data_crop['balance_summer'])
 
+# Save cropped dataset
+#data_crop.to_csv("C:/Users/kasj/ML_MB_Norway/Data/stake_mb_norway_cleaned.csv")
+
 #%% Stats
 
 # Stats for quality of approximate locations and altitudes:
