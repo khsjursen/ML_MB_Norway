@@ -28,10 +28,30 @@ point_data = pd.read_csv(filepath + filename)#, sep=';')\n",
 
 point_data.drop(columns=point_data.columns[0], axis=1, inplace=True)
 
-#%%
+#%% Load climate data
+
 with xr.open_dataset(filepath_climate + filename_climate) as ds:
     ds_climate = ds.load()
     
+# Get lat and lon from climate dataset
+
+lat = ds_climate.latitude
+lon = ds_climate.longitude
+    
+#%% Load geopotential height
+    
+with xr.open_dataset(filepath_climate + 'geo.nc') as ds_geo:
+    ds_geopotential = ds_geo.load()
+    
+# Convert geopotential height to geometric height and add to dataset
+R_earth = 6367.47 * 10e3 #m (Grib1 radius)
+g = 9.81 # m/s2
+
+ds_geopot_metric = ds_geopotential.assign(altitude_climate = lambda ds_geopotential: 
+                                          R_earth * ((ds_geopotential.z/g)/(R_earth - (ds_geopotential.z/g))))
+
+# Crop geometric height to grid of climate data
+ds_geopot_metric_crop = ds_geopot_metric.sel(longitude = lon, latitude = lat)
 
 #%%
 
@@ -96,6 +116,9 @@ for var in var_names:
 climate_all = np.empty((len(point_data.index),len(month_vars)))
 climate_all.fill(np.nan)
 
+altitude_all = np.empty((len(point_data.index),1))
+altitude_all.fill(np.nan)
+
 for i in point_data.index:
     
     # Get location and year for point measurement
@@ -118,20 +141,29 @@ for i in point_data.index:
     # Drop latitude and longitude columns from dataframe.
     d_climate.drop(columns=['latitude','longitude'],inplace=True)
     
+    # Select altitude of climate data for given point
+    p_alt = ds_geopot_metric_crop.sel(latitude=lat_stake,
+                                      longitude=lon_stake,
+                                      method = "nearest")
+    
+    #d_climate['altitude_climate'] = p_alt.altitude_climate.values[0]
+    
     # Flatten dataframe along columns such that each column (oct-sept)
     # follows each other in the flattened array
     a_climate = d_climate.to_numpy().flatten(order='F')
     
     # Store in array.
     climate_all[i,:] = a_climate
+    altitude_all[i,:] = p_alt.altitude_climate.values[0]
 
 #%%
 
 # Make pandas dataframe from array with column names from month_vars
 df_climate = pd.DataFrame(data = climate_all, columns = month_vars)
+df_altitude = pd.DataFrame(data = altitude_all, columns = ['altitude_climate'])
 
 # Concatenate dataframes
-df_point_climate = pd.concat([point_data, df_climate], axis=1)#.reindex(point_data.index)
+df_point_climate = pd.concat([point_data, df_climate, df_altitude], axis=1)#.reindex(point_data.index)
 
 df_point_climate.to_csv(filepath + filename_save, index=False) 
 
