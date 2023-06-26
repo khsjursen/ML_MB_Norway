@@ -74,6 +74,7 @@ ds_climate = ds_climate.reduce(np.nansum, 'expver')
 # ['u10','v10','t2m','fal','asn','sde','sd','slhf','ssr','str','sshf','ssrd','strd','tp']
 # u10: 10m u-component of wind, 
 # v10: 10m v-component of wind, 
+# d2m: 
 # t2m: 2m temperature, 
 # fal: Forecast albedo, 
 # asn: Snow albedo, 
@@ -86,6 +87,14 @@ ds_climate = ds_climate.reduce(np.nansum, 'expver')
 # ssrd: Surface solar radiation downwards, 
 # strd: Surface thermal radiation downwards, 
 # tp: Total precipitation
+# tsn: 
+# snowc: Snow cover
+# rsn:
+# es:
+# sf:
+# smlt:
+# sp
+
 # Go through each location (lat,lon,time) of stake dataset. Find monthly values of the 14 variables
 # for each of these locations. This makes 14*12=168 climate variables. 
 # We consider the year starts in beginning of october and ends in end of september. Use the 'curr_yr_min_date' to
