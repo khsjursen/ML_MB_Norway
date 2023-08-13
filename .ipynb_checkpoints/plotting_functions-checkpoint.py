@@ -31,8 +31,8 @@ def plot_prediction(y1, y2, data_type:str, n_toplot=10**10):
     idxs = np.arange(len(y1))
     np.random.shuffle(idxs)
 
-    y_max = 7 #max(max(y1), max(y2))[0] + 1
-    y_min = -1 #min(min(y1), min(y2))[0] - 1
+    y_max = 8#7 #max(max(y1), max(y2))[0] + 1
+    y_min = -15#1 #min(min(y1), min(y2))[0] - 1
     
     y_expected = y1.reshape(-1)[idxs[:n_toplot]]
     y_predicted = y2.reshape(-1)[idxs[:n_toplot]]
