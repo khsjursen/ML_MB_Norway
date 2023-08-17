@@ -44,7 +44,7 @@ def select_variables(df_data, vars, *args, drop=False):
     
     return df_data_sel
 
-def train_xgb_model(X, y, idc_list, params, scorer='neg_mean_squared_error'):
+def train_xgb_model(X, y, idc_list, params, scorer='neg_mean_squared_error', return_train=True):
 
     # Define model object.
     xgb_model = xgb.XGBRegressor()
@@ -58,7 +58,7 @@ def train_xgb_model(X, y, idc_list, params, scorer='neg_mean_squared_error'):
                        scoring=scorer, # Can use multiple metrics
                        refit=True, # Default True. For multiple metric evaluation, refit must be str denoting scorer to be used 
                        #to find the best parameters for refitting the estimator.
-                       return_train_score=False) # Default False. If False, cv_results_ will not include training scores.
+                       return_train_score=return_train) # Default False. If False, cv_results_ will not include training scores.
 
     # Fit model to folds
     clf.fit(X, y)
@@ -79,5 +79,5 @@ def train_xgb_model(X, y, idc_list, params, scorer='neg_mean_squared_error'):
 
     plot_prediction_per_fold(X, y, fitted_model, idc_list)
 
-    return fitted_model
+    return clf, fitted_model, cvl
     
