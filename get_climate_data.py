@@ -15,8 +15,8 @@ import matplotlib.pyplot as plt
 #%% Specify filepaths and filenames
 
 filepath = 'C:/Users/kasj/ML_MB_Norway/Data/'
-filename = '2023-06-01_stake_mb_norway_cleaned_ids_latlon_wattributes.csv'
-filename_save = '2023-06-01_stake_mb_norway_cleaned_ids_latlon_wattributes_climate.csv'
+filename = '2023-08-28_stake_mb_norway_cleaned_ids_latlon_wattributes.csv'
+filename_save = '2023-08-28_stake_mb_norway_cleaned_ids_latlon_wattributes_climate.csv'
 
 filepath_climate = 'C:/Users/kasj/ML_MB_Norway/Data/ERA5-Land_mon_avg_1950_2022_Norway/'
 filename_climate = 'data.nc'
@@ -112,7 +112,7 @@ ds_climate = ds_climate.reduce(np.nansum, 'expver')
 
 # Create list of variable names from variable names and months.
 var_names = list(ds_climate.keys())
-month_names = ['_oct','_nov','_des','_jan','_feb','_mar','_apr','_may','_jun','_jul','_aug','_sep']
+month_names = ['_oct','_nov','_dec','_jan','_feb','_mar','_apr','_may','_jun','_jul','_aug','_sep']
 
 # Combine variables and months
 month_vars = []
