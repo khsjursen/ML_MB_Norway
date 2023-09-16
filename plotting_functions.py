@@ -62,6 +62,7 @@ def plot_prediction(y1, y2, data_type:str, n_toplot=10**10):
     
     textstr = '\n'.join((
     r'$RMSE=%.2f$' % (mean_squared_error(y_expected, y_predicted, squared=False), ),
+    r'$MSE=%.2f$' % (mean_squared_error(y_expected, y_predicted, squared=True), ),
     r'$R^2=%.2f$' % (r2_score(y_expected, y_predicted), )))
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     # place a text box in upper left in axes coords
@@ -90,6 +91,7 @@ def plot_prediction_per_fold(X, y, model, idc_list):
 
     y_test_list = []
     y_pred_list = []
+    i = 0
 
     for train_index, test_index in idc_list:
         # Loops over n_splits iterations and gets train and test splits in each fold
@@ -100,6 +102,12 @@ def plot_prediction_per_fold(X, y, model, idc_list):
 
         y_test_list.extend(y_test)
         y_pred_list.extend(y_pred)
+
+        title = 'Validation fold ' + str(i)
+
+        plot_prediction(y_test, y_pred, title, n_toplot=5000)
+
+        i=i+1
 
     # Arrays of predictions and observations for each fold
     y_test_all = np.hstack([*y_test_list])
@@ -129,8 +137,10 @@ def plot_gsearch_results(grid):
 
     params=grid.param_grid
 
+    width = len(grid.best_params_.keys())*5
+
     ## Ploting results
-    fig, ax = plt.subplots(1,len(params),sharex='none', sharey='all',figsize=(20,5))
+    fig, ax = plt.subplots(1,len(params),sharex='none', sharey='all',figsize=(width,5))
     fig.suptitle('Score per parameter')
     fig.text(0.04, 0.5, 'MEAN SCORE', va='center', rotation='vertical')
     pram_preformace_in_best = {}
