@@ -67,9 +67,8 @@ def train_xgb_model(X, y, idc_list, params, scorer='neg_mean_squared_error', ret
     print('Cross validation score: ', clf.best_score_)
     print('Grid search best hyperparameters: ', clf.best_params_)
 
-    fitted_model = xgb.XGBRegressor(learning_rate = clf.best_params_['learning_rate'], 
-                                    n_estimators = clf.best_params_['n_estimators'],
-                                    max_depth = clf.best_params_['max_depth'])
+    # Model object with best parameters (** to unpack parameter dict)
+    fitted_model = xgb.XGBRegressor(**clf.best_params_)
     
     cvl = cross_val_score(fitted_model, X, y, cv=idc_list, scoring='neg_mean_squared_error')
 
@@ -78,6 +77,34 @@ def train_xgb_model(X, y, idc_list, params, scorer='neg_mean_squared_error', ret
     print('Standard deviation: ', cvl.std())
 
     plot_prediction_per_fold(X, y, fitted_model, idc_list)
+
+    return clf, fitted_model, cvl
+
+# Train model function without plotting
+def train_xgb_model_no_plot(X, y, idc_list, params, n_jobs=4, scorer='neg_mean_squared_error', return_train=True):
+
+    # Define model object.
+    xgb_model = xgb.XGBRegressor()
+    
+    # Set up grid search. 
+    clf = GridSearchCV(xgb_model, 
+                       params, 
+                       cv=idc_list, # Int or iterator (default for int is kfold)
+                       verbose=1, # Controls number of messages
+                       n_jobs=n_jobs, # No of parallell jobs
+                       scoring=scorer, # Can use multiple metrics
+                       refit=True, # Default True. For multiple metric evaluation, refit must be str denoting scorer to be used 
+                       #to find the best parameters for refitting the estimator.
+                       return_train_score=return_train) # Default False. If False, cv_results_ will not include training scores.
+
+    # Fit model to folds
+    clf.fit(X, y)
+
+    # Model object with best parameters (** to unpack parameter dict)
+    fitted_model = xgb.XGBRegressor(**clf.best_params_)
+
+    # Get cross validation scores
+    cvl = cross_val_score(fitted_model, X, y, cv=idc_list, scoring='neg_mean_squared_error')
 
     return clf, fitted_model, cvl
     
