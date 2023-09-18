@@ -89,19 +89,33 @@ splits_s = list(group_kf.split(X_train_s, y_train_s, gp_s))
 
 # Define parameter ranges.
 param_ranges = {'max_depth': [2, 3, 4, 5, 6, 7, 8], # Depth of tree
-                'n_estimators': [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000], # Number of trees (too many = overfitting, too few = underfitting)
-                'learning_rate': [0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5], #[0,1]
-                'gamma': [0, 1, 2, 4, 6, 8, 10], # Regularization parameter [0,inf]
-                'lambda': [0, 1, 2, 4, 6, 8, 10], # Regularization [1,inf]
-                'alpha': [0, 1, 2, 4, 6, 8, 10], # Regularization [0,inf]
+                'n_estimators': [50, 100, 200, 300, 400, 500], # Number of trees (too many = overfitting, too few = underfitting)
+                'learning_rate': [0.01, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4], #[0,1]
+                'gamma': [0, 1, 5, 10], # Regularization parameter [0,inf]
+                'lambda': [0, 1, 5, 10], # Regularization [1,inf]
+                'alpha': [0, 1, 5, 10], # Regularization [0,inf]
                 'colsample_bytree': [0.5, 0.75, 1], # (0,1]  A smaller colsample_bytree value results in smaller and less complex models, which can help prevent overfitting. It is common to set this value between 0.5 and 1.
                 'subsample': [0.5, 0.75, 1], # (0,1] common to set this value between 0.5 and 1
-                'min_child_weight': [0, 1, 2, 4, 6, 8, 10], # [0,inf]
-                'random_state': 23
+                'min_child_weight': [0, 1, 5, 10], # [0,inf]
+                'random_state': [23]
                } 
+#param_ranges = {'max_depth' : [2, 3, 4, 5, 6, 7, 8],
+#                'n_estimators' : [50, 100, 200, 300],
+#                'learning_rate': [0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
+#}
+
+n_jobs = 40
 
 # Train model
-cv_grid, best_model, cvl_scores = train_xgb_model_no_plot(X_train_s, y_train_s, splits_s, param_ranges, n_jobs=40, scorer='neg_mean_squared_error')
+cv_grid, best_model, cvl_scores = train_xgb_model_no_plot(X_train_s, y_train_s, splits_s, param_ranges, n_jobs=n_jobs, scorer='neg_mean_squared_error')
+
+# Print cv search time
+mean_fit_time= cv_grid.cv_results_['mean_fit_time']
+mean_score_time= cv_grid.cv_results_['mean_score_time']
+n_splits  = cv_grid.n_splits_ #number of splits of training data
+n_iter = pd.DataFrame(cv_grid.cv_results_).shape[0] #Iterations per split
+
+print('Total search time (seconds): ', (np.mean(mean_fit_time + mean_score_time) * n_splits * n_iter)/n_jobs)
 
 # Create folder to store results
 filepath_save = '/mirror/khsjursen/ML_MB_Norway/Models/Block_glacier_5fold/'

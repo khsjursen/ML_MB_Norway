@@ -53,7 +53,7 @@ def train_xgb_model(X, y, idc_list, params, scorer='neg_mean_squared_error', ret
     clf = GridSearchCV(xgb_model, 
                        params, 
                        cv=idc_list, # Int or iterator (default for int is kfold)
-                       verbose=1, # Controls number of messages
+                       verbose=2, # Controls number of messages
                        n_jobs=4, # No of parallell jobs
                        scoring=scorer, # Can use multiple metrics
                        refit=True, # Default True. For multiple metric evaluation, refit must be str denoting scorer to be used 
@@ -90,7 +90,7 @@ def train_xgb_model_no_plot(X, y, idc_list, params, n_jobs=4, scorer='neg_mean_s
     clf = GridSearchCV(xgb_model, 
                        params, 
                        cv=idc_list, # Int or iterator (default for int is kfold)
-                       verbose=1, # Controls number of messages
+                       verbose=2, # Controls number of messages
                        n_jobs=n_jobs, # No of parallell jobs
                        scoring=scorer, # Can use multiple metrics
                        refit=True, # Default True. For multiple metric evaluation, refit must be str denoting scorer to be used 
