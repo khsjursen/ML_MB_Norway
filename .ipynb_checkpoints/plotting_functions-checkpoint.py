@@ -9,7 +9,7 @@ from sklearn.inspection import permutation_importance
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-def plot_prediction(y1, y2, data_type:str, n_toplot=10**10):
+def plot_prediction(y1, y2, data_type:str, n_toplot=10**10, fold=False):
     """
     Plot model predictions y1 vs. actual observations y2 and show
     calculated error metrics.
@@ -27,6 +27,15 @@ def plot_prediction(y1, y2, data_type:str, n_toplot=10**10):
     
     from scipy.stats import gaussian_kde
     from sklearn.metrics import r2_score, mean_squared_error
+
+    if fold:
+        figsize=(5,5)
+        fontsize=12
+        s= 15
+    else:
+        figsize=(8,8)
+        fontsize=16
+        s= 20
     
     idxs = np.arange(len(y1))
     np.random.shuffle(idxs)
@@ -43,11 +52,11 @@ def plot_prediction(y1, y2, data_type:str, n_toplot=10**10):
     idx = z.argsort()
     y_plt, ann_plt, z = y_expected[idx], y_predicted[idx], z[idx]
     
-    plt.figure(figsize=(8,8))
-    plt.title("Model Evaluation " + data_type, fontsize=17)
-    plt.ylabel('Modeled SMB (m.w.e)', fontsize=16)
-    plt.xlabel('Reference SMB (m.w.e)', fontsize=16)
-    sc = plt.scatter(y_plt, ann_plt, c=z, s=20)
+    fig = plt.figure(figsize=figsize)
+    plt.title("Model Evaluation " + data_type, fontsize=fontsize)
+    plt.ylabel('Modeled SMB (m.w.e)', fontsize=fontsize)
+    plt.xlabel('Reference SMB (m.w.e)', fontsize=fontsize)
+    sc = plt.scatter(y_plt, ann_plt, c=z, s=s)
     plt.clim(0,0.4)
     plt.tick_params(labelsize=14)
     plt.colorbar(sc) 
@@ -62,12 +71,14 @@ def plot_prediction(y1, y2, data_type:str, n_toplot=10**10):
     
     textstr = '\n'.join((
     r'$RMSE=%.2f$' % (mean_squared_error(y_expected, y_predicted, squared=False), ),
+    r'$MSE=%.2f$' % (mean_squared_error(y_expected, y_predicted, squared=True), ),
     r'$R^2=%.2f$' % (r2_score(y_expected, y_predicted), )))
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     # place a text box in upper left in axes coords
     plt.text(0.05, 0.95, textstr, transform=plt.gca().transAxes, fontsize=14,
             verticalalignment='top', bbox=props)
     
+    #return fig
     plt.show()
 
 def plot_prediction_per_fold(X, y, model, idc_list):
@@ -90,6 +101,7 @@ def plot_prediction_per_fold(X, y, model, idc_list):
 
     y_test_list = []
     y_pred_list = []
+    i = 0
 
     for train_index, test_index in idc_list:
         # Loops over n_splits iterations and gets train and test splits in each fold
@@ -100,6 +112,12 @@ def plot_prediction_per_fold(X, y, model, idc_list):
 
         y_test_list.extend(y_test)
         y_pred_list.extend(y_pred)
+
+        title = 'Validation fold ' + str(i)
+
+        plot_prediction(y_test, y_pred, title, n_toplot=5000, fold=True)
+
+        i=i+1
 
     # Arrays of predictions and observations for each fold
     y_test_all = np.hstack([*y_test_list])
@@ -129,8 +147,10 @@ def plot_gsearch_results(grid):
 
     params=grid.param_grid
 
+    width = len(grid.best_params_.keys())*5
+
     ## Ploting results
-    fig, ax = plt.subplots(1,len(params),sharex='none', sharey='all',figsize=(20,5))
+    fig, ax = plt.subplots(1,len(params),sharex='none', sharey='all',figsize=(width,5))
     fig.suptitle('Score per parameter')
     fig.text(0.04, 0.5, 'MEAN SCORE', va='center', rotation='vertical')
     pram_preformace_in_best = {}
@@ -147,6 +167,7 @@ def plot_gsearch_results(grid):
         ax[i].errorbar(x, y_1, e_1, linestyle='--', marker='o', label='test')
         ax[i].errorbar(x, y_2, e_2, linestyle='-', marker='^',label='train' )
         ax[i].set_xlabel(p.upper())
+        ax[i].grid()
 
     plt.legend()
     plt.show()
