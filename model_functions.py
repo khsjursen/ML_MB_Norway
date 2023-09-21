@@ -15,6 +15,27 @@ import seaborn as sns
 
 from plotting_functions import plot_prediction_per_fold
 
+def get_model_residuals(X, y, model, idc_list):
+
+    y_test_list = []
+    y_pred_list = []
+
+    for train_index, test_index in idc_list:
+        # Loops over n_splits iterations and gets train and test splits in each fold
+        X_train, X_test = X[train_index], X[test_index]
+        y_train, y_test = y[train_index], y[test_index]
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+
+        y_test_list.extend(y_test)
+        y_pred_list.extend(y_pred)
+        
+    # Arrays of predictions and observations for each fold
+    y_test_all = np.hstack([*y_test_list])
+    y_pred_all = np.hstack([*y_pred_list])
+
+    return(y_test_all - y_pred_all)
+
 def select_variables(df_data, vars, *args, drop=False):
     """
     Select or drop variables (features or labels corresponding to dataframe column names) from Pandas DataFrame based 
