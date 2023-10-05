@@ -11,3 +11,5 @@ tests_tutorials.py
 Data
 .virtual_documents
 Models/Block_glacier_5fold/
+Models/Block_glacier_5fold_more_train/
+Models/Block_glacier_5fold_ann+seas/
