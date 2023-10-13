@@ -26,7 +26,7 @@ def plot_prediction(y1, y2, data_type:str, n_toplot=10**10, fold=False):
     """
     
     from scipy.stats import gaussian_kde
-    from sklearn.metrics import r2_score, mean_squared_error
+    from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 
     if fold:
         figsize=(5,5)
@@ -72,6 +72,7 @@ def plot_prediction(y1, y2, data_type:str, n_toplot=10**10, fold=False):
     textstr = '\n'.join((
     r'$RMSE=%.2f$' % (mean_squared_error(y_expected, y_predicted, squared=False), ),
     r'$MSE=%.2f$' % (mean_squared_error(y_expected, y_predicted, squared=True), ),
+    r'$MAE=%.2f$' % (mean_absolute_error(y_expected, y_predicted), ),
     r'$R^2=%.2f$' % (r2_score(y_expected, y_predicted), )))
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     # place a text box in upper left in axes coords
@@ -80,6 +81,81 @@ def plot_prediction(y1, y2, data_type:str, n_toplot=10**10, fold=False):
     
     #return fig
     plt.show()
+
+def plot_prediction_subplot(y1, y2, data_type:str, ax, n_toplot=10**10, fold=False):
+    """
+    Plot model predictions y1 vs. actual observations y2 and show
+    calculated error metrics.
+
+    Parameters:
+    y1 : np.array
+        Predicted labels.
+    y2 : np.array
+        Actual labels.
+    data_type : str
+        Type of data, e.g. "Validation" or "Test".
+    ax : array
+        Axis object
+    n_toplot : int
+        Number of points to plot. 
+    """
+    
+    from scipy.stats import gaussian_kde
+    from sklearn.metrics import r2_score, mean_squared_error
+
+    if fold:
+        figsize=(5,5)
+        fontsize=12
+        s= 15
+    else:
+        figsize=(8,8)
+        fontsize=16
+        s= 20
+    
+    idxs = np.arange(len(y1))
+    np.random.shuffle(idxs)
+
+    y_max = 8#7 #max(max(y1), max(y2))[0] + 1
+    y_min = -15#1 #min(min(y1), min(y2))[0] - 1
+    
+    y_expected = y1.reshape(-1)[idxs[:n_toplot]]
+    y_predicted = y2.reshape(-1)[idxs[:n_toplot]]
+
+    xy = np.vstack([y_expected, y_predicted])
+    z = gaussian_kde(xy)(xy)
+    # Sort the points by density, so that the densest points are plotted last
+    idx = z.argsort()
+    y_plt, ann_plt, z = y_expected[idx], y_predicted[idx], z[idx]
+    
+    #fig = plt.figure(figsize=figsize)
+    ax.scatter(y_plt, ann_plt, c=z, s=s)
+    plt.clim(0,0.4)
+    plt.tick_params(labelsize=14)
+    plt.colorbar(sc) 
+    lineStart = y_min
+    lineEnd = y_max
+    plt.plot([lineStart, lineEnd], [lineStart, lineEnd], 'k-')
+    plt.title("Model Evaluation " + data_type, fontsize=fontsize)
+    plt.ylabel('Modeled SMB (m.w.e)', fontsize=fontsize)
+    plt.xlabel('Reference SMB (m.w.e)', fontsize=fontsize)
+    plt.axvline(0.0, ls='-.', c='k')
+    plt.axhline(0.0, ls='-.', c='k')
+    plt.xlim(lineStart, lineEnd)
+    plt.ylim(lineStart, lineEnd)
+    plt.gca().set_box_aspect(1)
+    
+    textstr = '\n'.join((
+    r'$RMSE=%.2f$' % (mean_squared_error(y_expected, y_predicted, squared=False), ),
+    r'$MSE=%.2f$' % (mean_squared_error(y_expected, y_predicted, squared=True), ),
+    r'$MAE=%.2f$' % (mean_absolute_error(y_expected, y_predicted), ),
+    r'$R^2=%.2f$' % (r2_score(y_expected, y_predicted), )))
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    # place a text box in upper left in axes coords
+    plt.text(0.05, 0.95, textstr, transform=plt.gca().transAxes, fontsize=14,
+            verticalalignment='top', bbox=props)
+    
+    return ax
+    #plt.show()
 
 def plot_prediction_per_fold(X, y, model, idc_list):
     """

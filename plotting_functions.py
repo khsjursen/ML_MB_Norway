@@ -26,7 +26,7 @@ def plot_prediction(y1, y2, data_type:str, n_toplot=10**10, fold=False):
     """
     
     from scipy.stats import gaussian_kde
-    from sklearn.metrics import r2_score, mean_squared_error
+    from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 
     if fold:
         figsize=(5,5)
@@ -72,6 +72,7 @@ def plot_prediction(y1, y2, data_type:str, n_toplot=10**10, fold=False):
     textstr = '\n'.join((
     r'$RMSE=%.2f$' % (mean_squared_error(y_expected, y_predicted, squared=False), ),
     r'$MSE=%.2f$' % (mean_squared_error(y_expected, y_predicted, squared=True), ),
+    r'$MAE=%.2f$' % (mean_absolute_error(y_expected, y_predicted), ),
     r'$R^2=%.2f$' % (r2_score(y_expected, y_predicted), )))
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     # place a text box in upper left in axes coords
@@ -146,6 +147,7 @@ def plot_prediction_subplot(y1, y2, data_type:str, ax, n_toplot=10**10, fold=Fal
     textstr = '\n'.join((
     r'$RMSE=%.2f$' % (mean_squared_error(y_expected, y_predicted, squared=False), ),
     r'$MSE=%.2f$' % (mean_squared_error(y_expected, y_predicted, squared=True), ),
+    r'$MAE=%.2f$' % (mean_absolute_error(y_expected, y_predicted), ),
     r'$R^2=%.2f$' % (r2_score(y_expected, y_predicted), )))
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     # place a text box in upper left in axes coords
