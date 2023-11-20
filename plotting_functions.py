@@ -200,7 +200,7 @@ def plot_prediction_per_fold(X, y, model, idc_list):
     y_pred_all = np.hstack([*y_pred_list])
 
     # Plot predictions and observations for each cross-valiadation fold together
-    plot_prediction(y_test_all, y_pred_all, 'Validation', n_toplot=5000)
+    plot_prediction(y_test_all, y_pred_all, 'Validation', n_toplot=12000)
 
 def plot_gsearch_results(grid):
     """
