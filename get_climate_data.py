@@ -2,6 +2,9 @@
 """
 Created on Fri Jun  2 08:08:04 2023
 
+Get monthly climate data from ERA5-Land for each point (lat/lon).
+ERA5-Land monthly data downloaded from https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-land-monthly-means?tab=form
+
 @author: kasj
 """
 
