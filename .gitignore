@@ -8,7 +8,8 @@ Created on Thu Oct  1 20:18:22 2020
 .spyproject
 __pycache__
 tests_tutorials.py
-Data
+Data/old_data
+Data/data_model_comparison
 Figures
 .virtual_documents
 Models/Block_glacier_5fold/
