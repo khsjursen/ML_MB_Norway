@@ -21,7 +21,11 @@ Processing pipeline:
    Output is complete set of features and targets to be used for training. 
    input: 2023-08-28_stake_mb_norway_cleaned_ids_wattributes.csv
    output: 2023-08-28_stake_mb_norway_cleaned_ids_wattributes_climate.csv
-6. data_exploration.ipynb - Scipt for data exploration.
-   input: 2023-08-28_stake_mb_norway_cleaned_ids_wattributes_climate.csv
-7. final_training.ipynb - Summary notebook with different training cases using annual and seasonal mass balance and different splitting strategies for cross validation.
-   input: 2023-08-28_stake_mb_norway_cleaned_ids_wattributes_climate.csv
+
+Data exploration:
+- data_exploration.ipynb - Scipt for data exploration.
+  input: 2023-08-28_stake_mb_norway_cleaned_ids_wattributes_climate.csv
+
+Model training
+- final_training.ipynb - Summary notebook with different training cases using annual and seasonal mass balance and different splitting strategies for cross validation.
+  input: 2023-08-28_stake_mb_norway_cleaned_ids_wattributes_climate.csv
