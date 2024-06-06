@@ -18,3 +18,4 @@ Models/Block_glacier_5fold_ann+seas/
 Models/Random_5fold_ann+seas/
 Models/Final_training/
 Models/Random_5fold
+Models/Custom_loss/
