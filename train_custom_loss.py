@@ -1,6 +1,9 @@
 # Script for training custom loss model on HVL cluster
 
 # Import libraries
+import os
+import datetime
+import joblib
 import numpy as np
 import pandas as pd
 import xgboost as xgb
@@ -17,7 +20,77 @@ from sklearn.model_selection import cross_val_score
 from sklearn.utils.validation import check_is_fitted
 
 from model_functions import reshape_dataset_monthly
-from model_functions import custom_mse_metadata
+#from model_functions import custom_mse_metadata
+
+# Custom objective function scikit learn api with metadata, to be used with custom XGBRegressor class
+def custom_mse_metadata(y_true, y_pred, metadata):
+    """
+    Custom Mean Squared Error (MSE) objective function for evaluating monthly predictions with respect to 
+    seasonally or annually aggregated observations.
+    
+    For use in cases where predictions are done on a monthly time scale and need to be aggregated to be
+    compared with the true aggregated seasonal or annual value. Aggregations are performed according to a
+    unique ID provided by metadata. The function computes gradients and hessians 
+    used in gradient boosting methods, specifically for use with the XGBoost library's custom objective 
+    capabilities.
+    
+    Parameters
+    ----------
+    y_true : numpy.ndarray
+        True (seasonally or annually aggregated) values for each instance. For a unique ID, 
+        values are repeated n_months times across the group, e.g. the annual mass balance for a group
+        of 12 monthly predictions with the same unique ID is repeated 12 times. Before calculating the 
+        loss, the mean over the n unique IDs is taken.
+    
+    y_pred : numpy.ndarray
+        Predicted monthly values. These predictions will be aggregated according to the 
+        unique ID before calculating the loss, e.g. 12 monthly predictions with the same unique ID is
+        aggregated for evaluation against the true annual value.
+    
+    metadata : numpy.ndarray
+        An ND numpy array containing metadata for each monthly prediction. The first column is mandatory 
+        and represents the ID of the aggregated group to which each instance belongs. Each group identified 
+        by a unique ID will be aggregated together for the loss calculation. The following columns in the 
+        metadata can include additional information for each instance that may be useful for tracking or further 
+        processing but are not used in the loss calculation, e.g. number of months to be aggregated or the name 
+        of the month.
+        
+        ID (column 0): An integer that uniquely identifies the group which the instance belongs to.
+            
+    Returns
+    -------
+    gradients : numpy.ndarray
+        The gradient of the loss with respect to the predictions y_pred. This array has the same shape 
+        as y_pred.
+    
+    hessians : numpy.ndarray
+        The second derivative (hessian) of the loss with respect to the predictions y_pred. For MSE loss, 
+        the hessian is constant and thus this array is filled with ones, having the same shape as y_pred.
+    """
+    
+    # Initialize empty arrays for gradient and hessian
+    gradients = np.zeros_like(y_pred)
+    hessians = np.ones_like(y_pred) # Ones in case of mse
+    
+    # Unique aggregation groups based on the aggregation ID
+    unique_ids = np.unique(metadata[:, 0])
+    
+    # Loop over each unique ID to aggregate accordingly
+    for uid in unique_ids:
+        # Find indexes for the current aggregation group
+        indexes = metadata[:, 0] == uid
+        
+        # Aggregate y_pred for the current group
+        y_pred_agg = np.sum(y_pred[indexes])
+        
+        # True value is the same repeated value for the group, so we can use the mean
+        y_true_mean = np.mean(y_true[indexes])
+        
+        # Compute gradients for the group based on the aggregated prediction
+        gradient = y_pred_agg - y_true_mean
+        gradients[indexes] = gradient
+
+    return gradients, hessians
 
 # Define custom XGBRegressor class
 class CustomXGBRegressor(XGBRegressor):
@@ -350,13 +423,13 @@ n_iter = pd.DataFrame(clf.cv_results_).shape[0] #Iterations per split
 print('Total search time (seconds): ', (np.mean(mean_fit_time + mean_score_time) * n_splits * n_iter)/n_jobs)
 
 # Create folder to store results
-filepath_save = '/ML_MB_Norway/'
+filepath_save = 'Models/'
 dir = os.path.join(filepath_save, datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 os.makedirs(dir)
 
 # Save cv-objects
-joblib.dump(clf, dir + '/' + 'custom_loss_cv_grid.pkl')
-joblib.dump(best_model, dir + '/' + 'custom_loss_best_model.pkl')
 best_model.save_model(dir + '/' + 'custom_loss_best_model.bin')
+joblib.dump(clf, dir + '/' + 'custom_loss_cv_grid.pkl')
+#joblib.dump(best_model, dir + '/' + 'custom_loss_best_model.pkl')
 
 
