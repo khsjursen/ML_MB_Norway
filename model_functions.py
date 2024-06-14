@@ -128,4 +128,104 @@ def train_xgb_model_no_plot(X, y, idc_list, params, n_jobs=4, scorer='neg_mean_s
     cvl = cross_val_score(fitted_model, X, y, cv=idc_list, scoring='neg_mean_squared_error')
 
     return clf, fitted_model, cvl
+
+# Functions for data processing
+# Reshape dataframe to monthly resolution
+def reshape_dataset_monthly(df, id_vars, variables, months_order): 
+
+    df_list = []
+
+    for var in variables:
+        # Filter columns for the current variable and the ID columns
+        cols = [col for col in df.columns if col.startswith(var) or col in id_vars]
+        df_var = df[cols]
+
+        # Rename the columns to have just the month
+        df_var = df_var.rename(columns=lambda x: x.split('_')[-1] if x not in id_vars else x)
+
+        # Melt the DataFrame to long format and add month order
+        df_melted = pd.melt(df_var, id_vars=id_vars, var_name='month', value_name=var)
+        df_melted['month'] = pd.Categorical(df_melted['month'], categories=months_order, ordered=True)
+
+        df_list.append(df_melted)
+
+    # Combine all reshaped DataFrames
+    df_final = df_list[0]
+    for df_temp in df_list[1:]:
+        df_final = pd.merge(df_final, df_temp, on=id_vars + ['month'], how='left')
+
+    # Sort the DataFrame based on ID variables and month
+    df_final = df_final.sort_values(by=id_vars + ['month'])
+
+    return(df_final)
+
+# Custom objective function scikit learn api with metadata, to be used with custom XGBRegressor class
+def custom_mse_metadata(y_true, y_pred, metadata):
+    """
+    Custom Mean Squared Error (MSE) objective function for evaluating monthly predictions with respect to 
+    seasonally or annually aggregated observations.
+    
+    For use in cases where predictions are done on a monthly time scale and need to be aggregated to be
+    compared with the true aggregated seasonal or annual value. Aggregations are performed according to a
+    unique ID provided by metadata. The function computes gradients and hessians 
+    used in gradient boosting methods, specifically for use with the XGBoost library's custom objective 
+    capabilities.
+    
+    Parameters
+    ----------
+    y_true : numpy.ndarray
+        True (seasonally or annually aggregated) values for each instance. For a unique ID, 
+        values are repeated n_months times across the group, e.g. the annual mass balance for a group
+        of 12 monthly predictions with the same unique ID is repeated 12 times. Before calculating the 
+        loss, the mean over the n unique IDs is taken.
+    
+    y_pred : numpy.ndarray
+        Predicted monthly values. These predictions will be aggregated according to the 
+        unique ID before calculating the loss, e.g. 12 monthly predictions with the same unique ID is
+        aggregated for evaluation against the true annual value.
+    
+    metadata : numpy.ndarray
+        An ND numpy array containing metadata for each monthly prediction. The first column is mandatory 
+        and represents the ID of the aggregated group to which each instance belongs. Each group identified 
+        by a unique ID will be aggregated together for the loss calculation. The following columns in the 
+        metadata can include additional information for each instance that may be useful for tracking or further 
+        processing but are not used in the loss calculation, e.g. number of months to be aggregated or the name 
+        of the month.
+        
+        ID (column 0): An integer that uniquely identifies the group which the instance belongs to.
+            
+    Returns
+    -------
+    gradients : numpy.ndarray
+        The gradient of the loss with respect to the predictions y_pred. This array has the same shape 
+        as y_pred.
+    
+    hessians : numpy.ndarray
+        The second derivative (hessian) of the loss with respect to the predictions y_pred. For MSE loss, 
+        the hessian is constant and thus this array is filled with ones, having the same shape as y_pred.
+    """
+    
+    # Initialize empty arrays for gradient and hessian
+    gradients = np.zeros_like(y_pred)
+    hessians = np.ones_like(y_pred) # Ones in case of mse
+    
+    # Unique aggregation groups based on the aggregation ID
+    unique_ids = np.unique(metadata[:, 0])
+    
+    # Loop over each unique ID to aggregate accordingly
+    for uid in unique_ids:
+        # Find indexes for the current aggregation group
+        indexes = metadata[:, 0] == uid
+        
+        # Aggregate y_pred for the current group
+        y_pred_agg = np.sum(y_pred[indexes])
+        
+        # True value is the same repeated value for the group, so we can use the mean
+        y_true_mean = np.mean(y_true[indexes])
+        
+        # Compute gradients for the group based on the aggregated prediction
+        gradient = y_pred_agg - y_true_mean
+        gradients[indexes] = gradient
+
+    return gradients, hessians
     
