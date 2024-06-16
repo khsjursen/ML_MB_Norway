@@ -423,7 +423,7 @@ n_iter = pd.DataFrame(clf.cv_results_).shape[0] #Iterations per split
 print('Total search time (seconds): ', (np.mean(mean_fit_time + mean_score_time) * n_splits * n_iter)/n_jobs)
 
 # Create folder to store results
-filepath_save = 'Models/'
+filepath_save = 'Training_cluster/'
 dir = os.path.join(filepath_save, datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 os.makedirs(dir)
 
