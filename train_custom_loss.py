@@ -336,52 +336,106 @@ summer_months_order = ['may', 'jun', 'jul', 'aug', 'sep']
 winter_months_order = ['oct','nov','dec','jan','feb','mar','apr']
 annual_months_order = ['oct','nov','dec','jan','feb','mar','apr', 'may', 'jun', 'jul', 'aug', 'sep']
 
+# TRAIN MODEL WITH FULL DATASET:
+
+# # Reshape dataframes to monthly resolution
+# df_train_summer_final = reshape_dataset_monthly(df_train_summer_clean, id_vars, variables, summer_months_order)
+# df_train_winter_final = reshape_dataset_monthly(df_train_winter_clean, id_vars, variables, winter_months_order)
+# df_train_annual_final = reshape_dataset_monthly(df_train_annual_clean, id_vars, variables, annual_months_order)
+
+# # Combine training data in one dataframe
+# df_train_summer_final.reset_index(drop=True, inplace=True)
+# df_train_winter_final.reset_index(drop=True, inplace=True)
+# df_train_annual_final.reset_index(drop=True, inplace=True)
+
+# data_list = [df_train_summer_final, df_train_winter_final, df_train_annual_final]
+# df_train_final = pd.concat(data_list)
+
+# # Select features for training
+# df_train_X_reduce = df_train_final.drop(['balance','year','BREID'], axis=1)
+
+# # Move id and n_months to the end of the dataframe (these are to be used as metadata)
+# df_train_X = df_train_X_reduce[[c for c in df_train_X_reduce if c not in ['id','n_months','month']] + ['id','n_months','month']]
+
+# # Select labels for training
+# df_train_y = df_train_final[['balance']]
+
+# # Get arrays of features+metadata and targets
+# X_train, y_train = df_train_X.values, df_train_y.values
+
+# # Get glacier IDs from training dataset (in the order of which they appear in training dataset).
+# # gp_s is an array with shape equal to the shape of X_train_s and y_train_s.
+# gp_s = np.array(df_train_final['id'].values)
+
+# # Use five folds
+# group_kf = GroupKFold(n_splits=5)
+
+# # Split into folds according to group by glacier ID.
+# # For each unique glacier ID, indices in gp_s indicate which rows in X_train_s and y_train_s belong to the glacier.
+# splits_s = list(group_kf.split(X_train, y_train, gp_s))
+
+# print(len(gp_s))
+# print(y_train.shape)
+# print(X_train.shape)
+# print(df_train_X.columns)
+# print(df_train_y.columns)
+
+# TRAIN MODEL WITH SMALLER SAMPLE:
+
+# Get random sample of annual, summer, winter
+df_train_annual_sample = df_train_annual_clean.sample(n=400, random_state=42)
+df_train_summer_sample = df_train_summer_clean.sample(n=400, random_state=42)
+df_train_winter_sample = df_train_winter_clean.sample(n=400, random_state=42)
+
 # Reshape dataframes to monthly resolution
-df_train_summer_final = reshape_dataset_monthly(df_train_summer_clean, id_vars, variables, summer_months_order)
-df_train_winter_final = reshape_dataset_monthly(df_train_winter_clean, id_vars, variables, winter_months_order)
-df_train_annual_final = reshape_dataset_monthly(df_train_annual_clean, id_vars, variables, annual_months_order)
+df_train_summer_sample_final = reshape_dataset_monthly(df_train_summer_sample, id_vars, variables, summer_months_order)
+df_train_winter_sample_final = reshape_dataset_monthly(df_train_winter_sample, id_vars, variables, winter_months_order)
+df_train_annual_sample_final = reshape_dataset_monthly(df_train_annual_sample, id_vars, variables, annual_months_order)
 
 # Combine training data in one dataframe
-df_train_summer_final.reset_index(drop=True, inplace=True)
-df_train_winter_final.reset_index(drop=True, inplace=True)
-df_train_annual_final.reset_index(drop=True, inplace=True)
+df_train_summer_sample_final.reset_index(drop=True, inplace=True)
+df_train_winter_sample_final.reset_index(drop=True, inplace=True)
+df_train_annual_sample_final.reset_index(drop=True, inplace=True)
 
-data_list = [df_train_summer_final, df_train_winter_final, df_train_annual_final]
-df_train_final = pd.concat(data_list)
+data_list = [df_train_summer_sample_final, df_train_winter_sample_final, df_train_annual_sample_final]
+df_train_sample_final = pd.concat(data_list)
+#df_train_sample_final
 
 # Select features for training
-df_train_X_reduce = df_train_final.drop(['balance','year','BREID'], axis=1)
+df_train_X_reduce = df_train_sample_final.drop(['balance','year','BREID'], axis=1)
 
 # Move id and n_months to the end of the dataframe (these are to be used as metadata)
-df_train_X = df_train_X_reduce[[c for c in df_train_X_reduce if c not in ['id','n_months','month']] + ['id','n_months','month']]
+df_train_X_sample = df_train_X_reduce[[c for c in df_train_X_reduce if c not in ['id','n_months','month']] + ['id','n_months','month']]
 
 # Select labels for training
-df_train_y = df_train_final[['balance']]
+df_train_y_sample = df_train_sample_final[['balance']]
 
 # Get arrays of features+metadata and targets
-X_train, y_train = df_train_X.values, df_train_y.values
+X_train_s, y_train_s = df_train_X_sample.values, df_train_y_sample.values
 
 # Get glacier IDs from training dataset (in the order of which they appear in training dataset).
 # gp_s is an array with shape equal to the shape of X_train_s and y_train_s.
-gp_s = np.array(df_train_final['id'].values)
+gp_s_s = np.array(df_train_sample_final['id'].values)
 
 # Use five folds
-group_kf = GroupKFold(n_splits=5)
+group_kf_s = GroupKFold(n_splits=5)
 
 # Split into folds according to group by glacier ID.
 # For each unique glacier ID, indices in gp_s indicate which rows in X_train_s and y_train_s belong to the glacier.
-splits_s = list(group_kf.split(X_train, y_train, gp_s))
+splits_s_s = list(group_kf_s.split(X_train_s, y_train_s, gp_s_s))
 
-print(len(gp_s))
-print(y_train.shape)
-print(X_train.shape)
-print(df_train_X.columns)
-print(df_train_y.columns)
+print(len(gp_s_s))
+print(y_train_s.shape)
+print(X_train_s.shape)
+print(df_train_X_sample.columns)
+print(df_train_y_sample.columns)
+
+# HYPERPARAMETER TUNING
 
 # Define hyperparameter grid
-param_ranges = {'max_depth': [2, 4, 6, 8], # Depth of tree
+param_ranges = {'max_depth': [2, 4, 6], # Depth of tree
                 'n_estimators': [50, 100, 200, 300], # Number of trees (too many = overfitting, too few = underfitting)
-                'learning_rate': [0.01, 0.1, 0.2, 0.3], #[0,1]
+                'learning_rate': [0.01, 0.1, 0.2], #[0,1]
                 #'gamma': [0, 10], # Regularization parameter [0,inf]
                 #'lambda': [0, 10], # Regularization [1,inf]
                 #'alpha': [0, 10], # Regularization [0,inf]
@@ -401,7 +455,7 @@ n_jobs = 40
 
 clf = GridSearchCV(xgb_model, 
                    param_ranges, 
-                   cv=splits_s,
+                   cv=splits_s_s,
                    verbose=2, 
                    n_jobs=n_jobs, 
                    scoring = None, # Uses default in CustomXGBRegressor()
@@ -409,7 +463,7 @@ clf = GridSearchCV(xgb_model,
                    error_score='raise',
                    return_train_score=True) # Default False. If False, cv_results_ will not include training scores.
 
-clf.fit(X_train, y_train)
+clf.fit(X_train_s, y_train_s)
 
 # Save the model to a binary file
 best_model = clf.best_estimator_
