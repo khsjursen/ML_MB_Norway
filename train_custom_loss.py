@@ -19,6 +19,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import cross_val_score
 from sklearn.utils.validation import check_is_fitted
+from sklearn.preprocessing import MinMaxScaler
 
 from model_functions import reshape_dataset_monthly
 #from model_functions import custom_mse_metadata
@@ -362,7 +363,29 @@ df_train_X = df_train_X_reduce[[c for c in df_train_X_reduce if c not in ['id','
 df_train_y = df_train_final[['balance']]
 
 # Get arrays of features+metadata and targets
-X_train, y_train = df_train_X.values, df_train_y.values
+X_train_unnorm, y_train = df_train_X.values, df_train_y.values
+
+# Normalize features
+# Using min-max scaling
+
+# Initialize scaler
+scaler = MinMaxScaler()
+
+# Extract metadata columns
+metadata_columns = X_train_unnorm[:, -3:]
+
+# Extract remaining columns
+remaining_columns = X_train_unnorm[:, :-3]
+
+# Apply MinMaxScaler to the remaining columns
+scaled_remaining_columns = scaler.fit_transform(remaining_columns)
+
+# Combine scaled columns with metadata columns
+X_train = np.hstack((scaled_remaining_columns, metadata_columns))
+
+# Apply to validation/test data
+#X_val_scaled = scaler.transform(X_val)
+#X_test_scaled = scaler.transform(X_test)
 
 # Get glacier IDs from training dataset (in the order of which they appear in training dataset).
 # gp_s is an array with shape equal to the shape of X_train_s and y_train_s.
