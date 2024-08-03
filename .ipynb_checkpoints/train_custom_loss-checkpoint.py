@@ -1,12 +1,16 @@
 # Script for training custom loss model on HVL cluster
 
 # Import libraries
+import os
+import datetime
+import joblib
 import numpy as np
 import pandas as pd
 import xgboost as xgb
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 from itertools import product
+import dill as pickle
 
 from xgboost import XGBRegressor
 from sklearn.model_selection import KFold
@@ -15,9 +19,80 @@ from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import cross_val_score
 from sklearn.utils.validation import check_is_fitted
+from sklearn.preprocessing import MinMaxScaler
 
 from model_functions import reshape_dataset_monthly
-from model_functions import custom_mse_metadata
+#from model_functions import custom_mse_metadata
+
+# Custom objective function scikit learn api with metadata, to be used with custom XGBRegressor class
+def custom_mse_metadata(y_true, y_pred, metadata):
+    """
+    Custom Mean Squared Error (MSE) objective function for evaluating monthly predictions with respect to 
+    seasonally or annually aggregated observations.
+    
+    For use in cases where predictions are done on a monthly time scale and need to be aggregated to be
+    compared with the true aggregated seasonal or annual value. Aggregations are performed according to a
+    unique ID provided by metadata. The function computes gradients and hessians 
+    used in gradient boosting methods, specifically for use with the XGBoost library's custom objective 
+    capabilities.
+    
+    Parameters
+    ----------
+    y_true : numpy.ndarray
+        True (seasonally or annually aggregated) values for each instance. For a unique ID, 
+        values are repeated n_months times across the group, e.g. the annual mass balance for a group
+        of 12 monthly predictions with the same unique ID is repeated 12 times. Before calculating the 
+        loss, the mean over the n unique IDs is taken.
+    
+    y_pred : numpy.ndarray
+        Predicted monthly values. These predictions will be aggregated according to the 
+        unique ID before calculating the loss, e.g. 12 monthly predictions with the same unique ID is
+        aggregated for evaluation against the true annual value.
+    
+    metadata : numpy.ndarray
+        An ND numpy array containing metadata for each monthly prediction. The first column is mandatory 
+        and represents the ID of the aggregated group to which each instance belongs. Each group identified 
+        by a unique ID will be aggregated together for the loss calculation. The following columns in the 
+        metadata can include additional information for each instance that may be useful for tracking or further 
+        processing but are not used in the loss calculation, e.g. number of months to be aggregated or the name 
+        of the month.
+        
+        ID (column 0): An integer that uniquely identifies the group which the instance belongs to.
+            
+    Returns
+    -------
+    gradients : numpy.ndarray
+        The gradient of the loss with respect to the predictions y_pred. This array has the same shape 
+        as y_pred.
+    
+    hessians : numpy.ndarray
+        The second derivative (hessian) of the loss with respect to the predictions y_pred. For MSE loss, 
+        the hessian is constant and thus this array is filled with ones, having the same shape as y_pred.
+    """
+    
+    # Initialize empty arrays for gradient and hessian
+    gradients = np.zeros_like(y_pred)
+    hessians = np.ones_like(y_pred) # Ones in case of mse
+    
+    # Unique aggregation groups based on the aggregation ID
+    unique_ids = np.unique(metadata[:, 0])
+    
+    # Loop over each unique ID to aggregate accordingly
+    for uid in unique_ids:
+        # Find indexes for the current aggregation group
+        indexes = metadata[:, 0] == uid
+        
+        # Aggregate y_pred for the current group
+        y_pred_agg = np.sum(y_pred[indexes])
+        
+        # True value is the same repeated value for the group, so we can use the mean
+        y_true_mean = np.mean(y_true[indexes])
+        
+        # Compute gradients for the group based on the aggregated prediction
+        gradient = y_pred_agg - y_true_mean
+        gradients[indexes] = gradient
+
+    return gradients, hessians
 
 # Define custom XGBRegressor class
 class CustomXGBRegressor(XGBRegressor):
@@ -263,6 +338,8 @@ summer_months_order = ['may', 'jun', 'jul', 'aug', 'sep']
 winter_months_order = ['oct','nov','dec','jan','feb','mar','apr']
 annual_months_order = ['oct','nov','dec','jan','feb','mar','apr', 'may', 'jun', 'jul', 'aug', 'sep']
 
+# TRAIN MODEL WITH FULL DATASET:
+
 # Reshape dataframes to monthly resolution
 df_train_summer_final = reshape_dataset_monthly(df_train_summer_clean, id_vars, variables, summer_months_order)
 df_train_winter_final = reshape_dataset_monthly(df_train_winter_clean, id_vars, variables, winter_months_order)
@@ -286,7 +363,29 @@ df_train_X = df_train_X_reduce[[c for c in df_train_X_reduce if c not in ['id','
 df_train_y = df_train_final[['balance']]
 
 # Get arrays of features+metadata and targets
-X_train, y_train = df_train_X.values, df_train_y.values
+X_train_unnorm, y_train = df_train_X.values, df_train_y.values
+
+# Normalize features
+# Using min-max scaling
+
+# Initialize scaler
+scaler = MinMaxScaler()
+
+# Extract metadata columns
+metadata_columns = X_train_unnorm[:, -3:]
+
+# Extract remaining columns
+remaining_columns = X_train_unnorm[:, :-3]
+
+# Apply MinMaxScaler to the remaining columns
+scaled_remaining_columns = scaler.fit_transform(remaining_columns)
+
+# Combine scaled columns with metadata columns
+X_train = np.hstack((scaled_remaining_columns, metadata_columns))
+
+# Apply to validation/test data
+#X_val_scaled = scaler.transform(X_val)
+#X_test_scaled = scaler.transform(X_test)
 
 # Get glacier IDs from training dataset (in the order of which they appear in training dataset).
 # gp_s is an array with shape equal to the shape of X_train_s and y_train_s.
@@ -305,26 +404,78 @@ print(X_train.shape)
 print(df_train_X.columns)
 print(df_train_y.columns)
 
+# # TRAIN MODEL WITH SMALLER SAMPLE:
+
+# # Get random sample of annual, summer, winter
+# df_train_annual_sample = df_train_annual_clean.sample(n=400, random_state=42)
+# df_train_summer_sample = df_train_summer_clean.sample(n=400, random_state=42)
+# df_train_winter_sample = df_train_winter_clean.sample(n=400, random_state=42)
+
+# # Reshape dataframes to monthly resolution
+# df_train_summer_sample_final = reshape_dataset_monthly(df_train_summer_sample, id_vars, variables, summer_months_order)
+# df_train_winter_sample_final = reshape_dataset_monthly(df_train_winter_sample, id_vars, variables, winter_months_order)
+# df_train_annual_sample_final = reshape_dataset_monthly(df_train_annual_sample, id_vars, variables, annual_months_order)
+
+# # Combine training data in one dataframe
+# df_train_summer_sample_final.reset_index(drop=True, inplace=True)
+# df_train_winter_sample_final.reset_index(drop=True, inplace=True)
+# df_train_annual_sample_final.reset_index(drop=True, inplace=True)
+
+# data_list = [df_train_summer_sample_final, df_train_winter_sample_final, df_train_annual_sample_final]
+# df_train_sample_final = pd.concat(data_list)
+# #df_train_sample_final
+
+# # Select features for training
+# df_train_X_reduce = df_train_sample_final.drop(['balance','year','BREID'], axis=1)
+
+# # Move id and n_months to the end of the dataframe (these are to be used as metadata)
+# df_train_X_sample = df_train_X_reduce[[c for c in df_train_X_reduce if c not in ['id','n_months','month']] + ['id','n_months','month']]
+
+# # Select labels for training
+# df_train_y_sample = df_train_sample_final[['balance']]
+
+# # Get arrays of features+metadata and targets
+# X_train_s, y_train_s = df_train_X_sample.values, df_train_y_sample.values
+
+# # Get glacier IDs from training dataset (in the order of which they appear in training dataset).
+# # gp_s is an array with shape equal to the shape of X_train_s and y_train_s.
+# gp_s_s = np.array(df_train_sample_final['id'].values)
+
+# # Use five folds
+# group_kf_s = GroupKFold(n_splits=5)
+
+# # Split into folds according to group by glacier ID.
+# # For each unique glacier ID, indices in gp_s indicate which rows in X_train_s and y_train_s belong to the glacier.
+# splits_s_s = list(group_kf_s.split(X_train_s, y_train_s, gp_s_s))
+
+# print(len(gp_s_s))
+# print(y_train_s.shape)
+# print(X_train_s.shape)
+# print(df_train_X_sample.columns)
+# print(df_train_y_sample.columns)
+
+# HYPERPARAMETER TUNING
+
 # Define hyperparameter grid
-#param_ranges = {'max_depth': [2, 3, 4, 5, 6, 7, 8], # Depth of tree
-#                'n_estimators': [50, 100, 200, 300, 400, 500], # Number of trees (too many = overfitting, too few = underfitting)
-#                'learning_rate': [0.01, 0.1, 0.15, 0.2, 0.25, 0.3], #[0,1]
-#                'gamma': [0, 1, 5, 10], # Regularization parameter [0,inf]
-#                'lambda': [0, 1, 5, 10], # Regularization [1,inf]
-#                'alpha': [0, 1, 5, 10], # Regularization [0,inf]
-#                'colsample_bytree': [0.5, 0.75, 1], # (0,1]  A smaller colsample_bytree value results in smaller and less complex models, which can help prevent overfitting. It is common to set this value between 0.5 and 1.
-#                'subsample': [0.5, 0.75, 1], # (0,1] common to set this value between 0.5 and 1
-#                'min_child_weight': [0, 1, 5, 10], # [0,inf]
-#                'random_state': [23]
-#               } 
-param_ranges = {'max_depth':[2],
-                'n_estimators': [50],
-                'learning_rate':[0.3]
-               }
+param_ranges = {'max_depth': [2, 4, 6], # Depth of tree
+                'n_estimators': [50, 100, 200, 300], # Number of trees (too many = overfitting, too few = underfitting)
+                'learning_rate': [0.01, 0.1, 0.2], #[0,1]
+                #'gamma': [0, 10], # Regularization parameter [0,inf]
+                #'lambda': [0, 10], # Regularization [1,inf]
+                #'alpha': [0, 10], # Regularization [0,inf]
+                #'colsample_bytree': [0.5, 1], # (0,1]  A smaller colsample_bytree value results in smaller and less complex models, which can help prevent overfitting. It is common to set this value between 0.5 and 1.
+                #'subsample': [0.5, 1], # (0,1] common to set this value between 0.5 and 1
+                #'min_child_weight': [0, 5, 10], # [0,inf]
+                'random_state': [23]
+               } 
+#param_ranges = {'max_depth':[2],
+#                'n_estimators': [50],
+#                'learning_rate':[0.3]
+#               }
 
 xgb_model = CustomXGBRegressor()
 
-n_jobs = 4
+n_jobs = 40
 
 clf = GridSearchCV(xgb_model, 
                    param_ranges, 
@@ -350,13 +501,16 @@ n_iter = pd.DataFrame(clf.cv_results_).shape[0] #Iterations per split
 print('Total search time (seconds): ', (np.mean(mean_fit_time + mean_score_time) * n_splits * n_iter)/n_jobs)
 
 # Create folder to store results
-filepath_save = '/ML_MB_Norway/'
+filepath_save = 'Training_cluster/'
 dir = os.path.join(filepath_save, datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 os.makedirs(dir)
 
 # Save cv-objects
-joblib.dump(clf, dir + '/' + 'custom_loss_cv_grid.pkl')
-joblib.dump(best_model, dir + '/' + 'custom_loss_best_model.pkl')
-best_model.save_model(dir + '/' + 'custom_loss_best_model.bin')
+best_model.save_model(dir + '/' + 'custom_loss_best_model.json')
+# Save the model using dill
+with open(dir + '/' + 'custom_loss_cv_grid.pkl', 'wb') as f:
+    pickle.dump(clf, f)
+#joblib.dump(clf, dir + '/' + 'custom_loss_cv_grid.pkl')
+#joblib.dump(best_model, dir + '/' + 'custom_loss_best_model.pkl')
 
 
