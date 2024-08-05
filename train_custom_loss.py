@@ -363,25 +363,26 @@ df_train_X = df_train_X_reduce[[c for c in df_train_X_reduce if c not in ['id','
 df_train_y = df_train_final[['balance']]
 
 # Get arrays of features+metadata and targets
-X_train_unnorm, y_train = df_train_X.values, df_train_y.values
+#X_train_unnorm, y_train = df_train_X.values, df_train_y.values
+X_train, y_train = df_train_X.values, df_train_y.values
 
 # Normalize features
 # Using min-max scaling
 
 # Initialize scaler
-scaler = MinMaxScaler()
+#scaler = MinMaxScaler()
 
 # Extract metadata columns
-metadata_columns = X_train_unnorm[:, -3:]
+#metadata_columns = X_train_unnorm[:, -3:]
 
 # Extract remaining columns
-remaining_columns = X_train_unnorm[:, :-3]
+#remaining_columns = X_train_unnorm[:, :-3]
 
 # Apply MinMaxScaler to the remaining columns
-scaled_remaining_columns = scaler.fit_transform(remaining_columns)
+#scaled_remaining_columns = scaler.fit_transform(remaining_columns)
 
 # Combine scaled columns with metadata columns
-X_train = np.hstack((scaled_remaining_columns, metadata_columns))
+#X_train = np.hstack((scaled_remaining_columns, metadata_columns))
 
 # Apply to validation/test data
 #X_val_scaled = scaler.transform(X_val)
@@ -457,9 +458,9 @@ print(df_train_y.columns)
 # HYPERPARAMETER TUNING
 
 # Define hyperparameter grid
-param_ranges = {'max_depth': [2, 4, 6], # Depth of tree
-                'n_estimators': [50, 100, 200, 300], # Number of trees (too many = overfitting, too few = underfitting)
-                'learning_rate': [0.01, 0.1, 0.2], #[0,1]
+param_ranges = {'max_depth': [4, 5, 6, 7], # Depth of tree
+                'n_estimators': [200, 300, 400, 500], # Number of trees (too many = overfitting, too few = underfitting)
+                'learning_rate': [0.1, 0.15, 0.2, 0.25], #[0,1]
                 #'gamma': [0, 10], # Regularization parameter [0,inf]
                 #'lambda': [0, 10], # Regularization [1,inf]
                 #'alpha': [0, 10], # Regularization [0,inf]
