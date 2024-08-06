@@ -25,6 +25,7 @@ from model_functions import reshape_dataset_monthly
 #from model_functions import custom_mse_metadata
 
 # Custom objective function scikit learn api with metadata, to be used with custom XGBRegressor class
+# Updated based on version from Julian
 def custom_mse_metadata(y_true, y_pred, metadata):
     """
     Custom Mean Squared Error (MSE) objective function for evaluating monthly predictions with respect to 
@@ -69,32 +70,35 @@ def custom_mse_metadata(y_true, y_pred, metadata):
         The second derivative (hessian) of the loss with respect to the predictions y_pred. For MSE loss, 
         the hessian is constant and thus this array is filled with ones, having the same shape as y_pred.
     """
-    
-    # Initialize empty arrays for gradient and hessian
+            
+    # Initialize gradients and hessians
     gradients = np.zeros_like(y_pred)
-    hessians = np.ones_like(y_pred) # Ones in case of mse
+    hessians = np.ones_like(y_pred)
+
+    # Get the aggregated predictions and the mean score based on the true labels, and predicted labels
+    # based on the metadata.
+    #y_pred_agg, y_true_mean, grouped_ids, df_metadata = CustomXGBoostRegressor._create_metadata_scores(metadata, y_true, y_pred)
+    df_metadata = pd.DataFrame(metadata, columns=['ID', 'N_MONTHS', 'MONTH'])
+
+    # Aggregate y_pred and y_true for each group
+    grouped_ids = df_metadata.assign(y_true=y_true, y_pred=y_pred).groupby('ID')
+    y_pred_agg = grouped_ids['y_pred'].sum().values
+    y_true_mean = grouped_ids['y_true'].mean().values
     
-    # Unique aggregation groups based on the aggregation ID
-    unique_ids = np.unique(metadata[:, 0])
-    
-    # Loop over each unique ID to aggregate accordingly
-    for uid in unique_ids:
-        # Find indexes for the current aggregation group
-        indexes = metadata[:, 0] == uid
-        
-        # Aggregate y_pred for the current group
-        y_pred_agg = np.sum(y_pred[indexes])
-        
-        # True value is the same repeated value for the group, so we can use the mean
-        y_true_mean = np.mean(y_true[indexes])
-        
-        # Compute gradients for the group based on the aggregated prediction
-        gradient = y_pred_agg - y_true_mean
-        gradients[indexes] = gradient
+    # Compute gradients
+    gradients_agg = y_pred_agg - y_true_mean
+
+    # Create a mapping from ID to gradient
+    gradient_map = dict(zip(grouped_ids.groups.keys(), gradients_agg))
+
+    # Assign gradients to corresponding indices
+    df_metadata['gradient'] = df_metadata['ID'].map(gradient_map)
+    gradients[df_metadata.index] = df_metadata['gradient'].values
 
     return gradients, hessians
 
 # Define custom XGBRegressor class
+# Updated based on version from Julian
 class CustomXGBRegressor(XGBRegressor):
     """
     CustomXGBRegressor is an extension of the XGBoost regressor that incorporates additional metadata into the learning process. The estimator
@@ -155,34 +159,19 @@ class CustomXGBRegressor(XGBRegressor):
 
         metadata, features = X[:, -self.metadata_shape:], X[:, :-self.metadata_shape]
         
-        all_pred_agg = []
-        all_true_mean = []
-    
-        unique_ids = np.unique(metadata[:, 0]) # ID is first column of metadata
+        # Get the aggregated predictions and the mean score based on the true labels, and predicted labels
+        # based on the metadata.
+        df_metadata = pd.DataFrame(metadata, columns=['ID', 'N_MONTHS', 'MONTH'])
 
-        # Loop over each unique ID to aggregate/get mean
-        for uid in unique_ids:
-
-            indexes = metadata[:, 0] == uid
-        
-            # Aggregate predictions for the current ID
-            y_pred_agg = np.sum(y_pred[indexes])
-        
-            # Get mean of true values for the current ID
-            y_true_mean = np.mean(y[indexes])
-
-            all_pred_agg.append(y_pred_agg)
-            all_true_mean.append(y_true_mean)
-        
-            #mse += (y_pred_agg - y_true_mean) ** 2
-
-        all_pred_agg = np.array(all_pred_agg)
-        all_true_mean = np.array(all_true_mean)
+        # Aggregate y_pred and y_true for each group
+        grouped_ids = df_metadata.assign(y_true=y, y_pred=y_pred).groupby('ID')
+        y_pred_agg = grouped_ids['y_pred'].sum().values
+        y_true_mean = grouped_ids['y_true'].mean().values
 
         # Compute mse 
-        mse = ((all_pred_agg - all_true_mean) ** 2).mean()
+        mse = ((y_pred_agg - y_true_mean) ** 2).mean()
 
-        return -mse # Return negative because GridSearchCV maximizes score        
+        return -mse # Return negative because GridSearchCV maximizes score       
 
 # Get and prepare data 
 # Specify filepaths and filenames.
@@ -458,9 +447,9 @@ print(df_train_y.columns)
 # HYPERPARAMETER TUNING
 
 # Define hyperparameter grid
-param_ranges = {'max_depth': [4, 5, 6, 7], # Depth of tree
-                'n_estimators': [200, 300, 400, 500], # Number of trees (too many = overfitting, too few = underfitting)
-                'learning_rate': [0.1, 0.15, 0.2, 0.25], #[0,1]
+param_ranges = {'max_depth': [2, 4, 6], # Depth of tree
+                'n_estimators': [50, 100, 200, 300], # Number of trees (too many = overfitting, too few = underfitting)
+                'learning_rate': [0.01, 0.1, 0.2], #[0,1]
                 #'gamma': [0, 10], # Regularization parameter [0,inf]
                 #'lambda': [0, 10], # Regularization [1,inf]
                 #'alpha': [0, 10], # Regularization [0,inf]
