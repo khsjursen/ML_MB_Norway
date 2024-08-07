@@ -450,8 +450,8 @@ print(df_train_y.columns)
 param_ranges = {'max_depth': [5, 6, 7, 8], # Depth of tree
                 'n_estimators': [300, 400, 500, 600, 700, 800], # Number of trees (too many = overfitting, too few = underfitting)
                 'learning_rate': [0.05, 0.1, 0.15], #[0,1]
-                'gamma': [0, 10], # Regularization parameter [0,inf]
-                'lambda': [0, 10], # Regularization [1,inf]
+                #'gamma': [0, 10], # Regularization parameter [0,inf]
+                #'lambda': [0, 10], # Regularization [1,inf]
                 'alpha': [0, 10], # Regularization [0,inf]
                 #'colsample_bytree': [0.5, 1], # (0,1]  A smaller colsample_bytree value results in smaller and less complex models, which can help prevent overfitting. It is common to set this value between 0.5 and 1.
                 #'subsample': [0.5, 1], # (0,1] common to set this value between 0.5 and 1
