@@ -226,8 +226,8 @@ class CustomXGBRegressor(XGBRegressor):
 
         # Define closure that captures metadata for use in custom objective
         def custom_objective(y_true, y_pred):
-            #return custom_mse_metadata(y_true, y_pred, metadata)
-            return custom_phl_metadata(y_true, y_pred, metadata)
+            return custom_mse_metadata(y_true, y_pred, metadata)
+            #return custom_phl_metadata(y_true, y_pred, metadata)
 
         # Set custom objective
         self.set_params(objective=custom_objective)
@@ -261,13 +261,13 @@ class CustomXGBRegressor(XGBRegressor):
         y_true_mean = grouped_ids['y_true'].mean().values
 
         # Compute mse 
-        #mse = ((y_pred_agg - y_true_mean) ** 2).mean()
+        mse = ((y_pred_agg - y_true_mean) ** 2).mean()
 
         # Compute mae
-        mae = (abs(y_pred_agg - y_true_mean)).mean()
+        #mae = (abs(y_pred_agg - y_true_mean)).mean()
 
-        #return -mse # Return negative because GridSearchCV maximizes score
-        return -mae      
+        return -mse # Return negative because GridSearchCV maximizes score
+        #return -mae      
 
 # Get and prepare data 
 # Specify filepaths and filenames.

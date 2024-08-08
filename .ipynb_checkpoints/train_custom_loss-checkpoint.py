@@ -226,8 +226,8 @@ class CustomXGBRegressor(XGBRegressor):
 
         # Define closure that captures metadata for use in custom objective
         def custom_objective(y_true, y_pred):
-            #return custom_mse_metadata(y_true, y_pred, metadata)
-            return custom_phl_metadata(y_true, y_pred, metadata)
+            return custom_mse_metadata(y_true, y_pred, metadata)
+            #return custom_phl_metadata(y_true, y_pred, metadata)
 
         # Set custom objective
         self.set_params(objective=custom_objective)
@@ -261,13 +261,13 @@ class CustomXGBRegressor(XGBRegressor):
         y_true_mean = grouped_ids['y_true'].mean().values
 
         # Compute mse 
-        #mse = ((y_pred_agg - y_true_mean) ** 2).mean()
+        mse = ((y_pred_agg - y_true_mean) ** 2).mean()
 
         # Compute mae
-        mae = (abs(y_pred_agg - y_true_mean)).mean()
+        #mae = (abs(y_pred_agg - y_true_mean)).mean()
 
-        #return -mse # Return negative because GridSearchCV maximizes score
-        return -mae      
+        return -mse # Return negative because GridSearchCV maximizes score
+        #return -mae      
 
 # Get and prepare data 
 # Specify filepaths and filenames.
@@ -543,10 +543,10 @@ print(df_train_y.columns)
 # HYPERPARAMETER TUNING
 
 # Define hyperparameter grid
-param_ranges = {'max_depth': [5, 6, 7, 8], # Depth of tree
-                'n_estimators': [400, 500, 600, 700, 800], # Number of trees (too many = overfitting, too few = underfitting)
+param_ranges = {'max_depth': [4, 5, 6, 7], # Depth of tree
+                'n_estimators': [100, 200, 300, 400], # Number of trees (too many = overfitting, too few = underfitting)
                 'learning_rate': [0.1, 0.15, 0.2], #[0,1]
-                'gamma': [0], # Regularization parameter, minimum loss reduction required to make split [0,inf]
+                'gamma': [1, 5, 10], # Regularization parameter, minimum loss reduction required to make split [0,inf]
                 #'lambda': [0, 10], # Regularization [1,inf]
                 #'alpha': [0, 10], # Regularization [0,inf]
                 #'colsample_bytree': [0.5, 1], # (0,1]  A smaller colsample_bytree value results in smaller and less complex models, which can help prevent overfitting. It is common to set this value between 0.5 and 1.
