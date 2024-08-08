@@ -25,6 +25,7 @@ from model_functions import reshape_dataset_monthly
 #from model_functions import custom_mse_metadata
 
 # Custom objective function scikit learn api with metadata, to be used with custom XGBRegressor class
+# Updated based on version from Julian
 def custom_mse_metadata(y_true, y_pred, metadata):
     """
     Custom Mean Squared Error (MSE) objective function for evaluating monthly predictions with respect to 
@@ -69,32 +70,126 @@ def custom_mse_metadata(y_true, y_pred, metadata):
         The second derivative (hessian) of the loss with respect to the predictions y_pred. For MSE loss, 
         the hessian is constant and thus this array is filled with ones, having the same shape as y_pred.
     """
-    
-    # Initialize empty arrays for gradient and hessian
+            
+    # Initialize gradients and hessians
     gradients = np.zeros_like(y_pred)
-    hessians = np.ones_like(y_pred) # Ones in case of mse
+    hessians = np.ones_like(y_pred)
+
+    # Get the aggregated predictions and the mean score based on the true labels, and predicted labels
+    # based on the metadata.
+    #y_pred_agg, y_true_mean, grouped_ids, df_metadata = CustomXGBoostRegressor._create_metadata_scores(metadata, y_true, y_pred)
+    df_metadata = pd.DataFrame(metadata, columns=['ID', 'N_MONTHS', 'MONTH'])
+
+    # Aggregate y_pred and y_true for each group
+    grouped_ids = df_metadata.assign(y_true=y_true, y_pred=y_pred).groupby('ID')
+    y_pred_agg = grouped_ids['y_pred'].sum().values
+    y_true_mean = grouped_ids['y_true'].mean().values
     
-    # Unique aggregation groups based on the aggregation ID
-    unique_ids = np.unique(metadata[:, 0])
+    # Compute gradients
+    gradients_agg = y_pred_agg - y_true_mean
+
+    # Create a mapping from ID to gradient
+    gradient_map = dict(zip(grouped_ids.groups.keys(), gradients_agg))
+
+    # Assign gradients to corresponding indices
+    df_metadata['gradient'] = df_metadata['ID'].map(gradient_map)
+    gradients[df_metadata.index] = df_metadata['gradient'].values
+
+    return gradients, hessians
+
+
+def custom_phl_metadata(y_true, y_pred, metadata):
+    """
+    Custom Mean Squared Error (MSE) objective function for evaluating monthly predictions with respect to 
+    seasonally or annually aggregated observations.
     
-    # Loop over each unique ID to aggregate accordingly
-    for uid in unique_ids:
-        # Find indexes for the current aggregation group
-        indexes = metadata[:, 0] == uid
+    For use in cases where predictions are done on a monthly time scale and need to be aggregated to be
+    compared with the true aggregated seasonal or annual value. Aggregations are performed according to a
+    unique ID provided by metadata. The function computes gradients and hessians 
+    used in gradient boosting methods, specifically for use with the XGBoost library's custom objective 
+    capabilities.
+    
+    Parameters
+    ----------
+    y_true : numpy.ndarray
+        True (seasonally or annually aggregated) values for each instance. For a unique ID, 
+        values are repeated n_months times across the group, e.g. the annual mass balance for a group
+        of 12 monthly predictions with the same unique ID is repeated 12 times. Before calculating the 
+        loss, the mean over the n unique IDs is taken.
+    
+    y_pred : numpy.ndarray
+        Predicted monthly values. These predictions will be aggregated according to the 
+        unique ID before calculating the loss, e.g. 12 monthly predictions with the same unique ID is
+        aggregated for evaluation against the true annual value.
+    
+    metadata : numpy.ndarray
+        An ND numpy array containing metadata for each monthly prediction. The first column is mandatory 
+        and represents the ID of the aggregated group to which each instance belongs. Each group identified 
+        by a unique ID will be aggregated together for the loss calculation. The following columns in the 
+        metadata can include additional information for each instance that may be useful for tracking or further 
+        processing but are not used in the loss calculation, e.g. number of months to be aggregated or the name 
+        of the month.
         
-        # Aggregate y_pred for the current group
-        y_pred_agg = np.sum(y_pred[indexes])
-        
-        # True value is the same repeated value for the group, so we can use the mean
-        y_true_mean = np.mean(y_true[indexes])
-        
-        # Compute gradients for the group based on the aggregated prediction
-        gradient = y_pred_agg - y_true_mean
-        gradients[indexes] = gradient
+        ID (column 0): An integer that uniquely identifies the group which the instance belongs to.
+            
+    Returns
+    -------
+    gradients : numpy.ndarray
+        The gradient of the loss with respect to the predictions y_pred. This array has the same shape 
+        as y_pred.
+    
+    hessians : numpy.ndarray
+        The second derivative (hessian) of the loss with respect to the predictions y_pred. For MSE loss, 
+        the hessian is constant and thus this array is filled with ones, having the same shape as y_pred.
+    """
+            
+    # Initialize gradients and hessians
+    gradients = np.zeros_like(y_pred)
+    hessians = np.ones_like(y_pred)
+
+    # Get the aggregated predictions and the mean score based on the true labels, and predicted labels
+    # based on the metadata.
+    #y_pred_agg, y_true_mean, grouped_ids, df_metadata = CustomXGBoostRegressor._create_metadata_scores(metadata, y_true, y_pred)
+    df_metadata = pd.DataFrame(metadata, columns=['ID', 'N_MONTHS', 'MONTH'])
+
+    # Aggregate y_pred and y_true for each group
+    grouped_ids = df_metadata.assign(y_true=y_true, y_pred=y_pred).groupby('ID')
+    y_pred_agg = grouped_ids['y_pred'].sum().values
+    y_true_mean = grouped_ids['y_true'].mean().values
+
+    z = y_pred_agg - y_true_mean
+
+    # Delta set to 1 for mae approximation
+    # TO-DO: Possibly use 1 as default and have user choose delta
+    delta = 1
+
+    scale = 1 + (z/delta)**2
+    scale_sqrt = np.sqrt(scale)
+
+    # Compute gradients
+    gradients_agg = z/scale_sqrt
+
+    # Compute hessians
+    hessians_agg = 1/(scale*scale_sqrt)
+
+    # Create a mapping from ID to gradient
+    gradient_map = dict(zip(grouped_ids.groups.keys(), gradients_agg))
+
+    # Create a mapping from ID to hessians
+    hessian_map = dict(zip(grouped_ids.groups.keys(), hessians_agg))
+
+    # Assign gradients to corresponding indices
+    df_metadata['gradient'] = df_metadata['ID'].map(gradient_map)
+    gradients[df_metadata.index] = df_metadata['gradient'].values
+
+    # Assign hessians to corresponding indices
+    df_metadata['hessian'] = df_metadata['ID'].map(hessian_map)
+    hessians[df_metadata.index] = df_metadata['hessian'].values
 
     return gradients, hessians
 
 # Define custom XGBRegressor class
+# Updated based on version from Julian
 class CustomXGBRegressor(XGBRegressor):
     """
     CustomXGBRegressor is an extension of the XGBoost regressor that incorporates additional metadata into the learning process. The estimator
@@ -131,7 +226,8 @@ class CustomXGBRegressor(XGBRegressor):
 
         # Define closure that captures metadata for use in custom objective
         def custom_objective(y_true, y_pred):
-            return custom_mse_metadata(y_true, y_pred, metadata)
+            #return custom_mse_metadata(y_true, y_pred, metadata)
+            return custom_phl_metadata(y_true, y_pred, metadata)
 
         # Set custom objective
         self.set_params(objective=custom_objective)
@@ -155,34 +251,23 @@ class CustomXGBRegressor(XGBRegressor):
 
         metadata, features = X[:, -self.metadata_shape:], X[:, :-self.metadata_shape]
         
-        all_pred_agg = []
-        all_true_mean = []
-    
-        unique_ids = np.unique(metadata[:, 0]) # ID is first column of metadata
+        # Get the aggregated predictions and the mean score based on the true labels, and predicted labels
+        # based on the metadata.
+        df_metadata = pd.DataFrame(metadata, columns=['ID', 'N_MONTHS', 'MONTH'])
 
-        # Loop over each unique ID to aggregate/get mean
-        for uid in unique_ids:
-
-            indexes = metadata[:, 0] == uid
-        
-            # Aggregate predictions for the current ID
-            y_pred_agg = np.sum(y_pred[indexes])
-        
-            # Get mean of true values for the current ID
-            y_true_mean = np.mean(y[indexes])
-
-            all_pred_agg.append(y_pred_agg)
-            all_true_mean.append(y_true_mean)
-        
-            #mse += (y_pred_agg - y_true_mean) ** 2
-
-        all_pred_agg = np.array(all_pred_agg)
-        all_true_mean = np.array(all_true_mean)
+        # Aggregate y_pred and y_true for each group
+        grouped_ids = df_metadata.assign(y_true=y, y_pred=y_pred).groupby('ID')
+        y_pred_agg = grouped_ids['y_pred'].sum().values
+        y_true_mean = grouped_ids['y_true'].mean().values
 
         # Compute mse 
-        mse = ((all_pred_agg - all_true_mean) ** 2).mean()
+        #mse = ((y_pred_agg - y_true_mean) ** 2).mean()
 
-        return -mse # Return negative because GridSearchCV maximizes score        
+        # Compute mae
+        mae = (abs(y_pred_agg - y_true_mean)).mean()
+
+        #return -mse # Return negative because GridSearchCV maximizes score
+        return -mae      
 
 # Get and prepare data 
 # Specify filepaths and filenames.
@@ -363,25 +448,26 @@ df_train_X = df_train_X_reduce[[c for c in df_train_X_reduce if c not in ['id','
 df_train_y = df_train_final[['balance']]
 
 # Get arrays of features+metadata and targets
-X_train_unnorm, y_train = df_train_X.values, df_train_y.values
+#X_train_unnorm, y_train = df_train_X.values, df_train_y.values
+X_train, y_train = df_train_X.values, df_train_y.values
 
 # Normalize features
 # Using min-max scaling
 
 # Initialize scaler
-scaler = MinMaxScaler()
+#scaler = MinMaxScaler()
 
 # Extract metadata columns
-metadata_columns = X_train_unnorm[:, -3:]
+#metadata_columns = X_train_unnorm[:, -3:]
 
 # Extract remaining columns
-remaining_columns = X_train_unnorm[:, :-3]
+#remaining_columns = X_train_unnorm[:, :-3]
 
 # Apply MinMaxScaler to the remaining columns
-scaled_remaining_columns = scaler.fit_transform(remaining_columns)
+#scaled_remaining_columns = scaler.fit_transform(remaining_columns)
 
 # Combine scaled columns with metadata columns
-X_train = np.hstack((scaled_remaining_columns, metadata_columns))
+#X_train = np.hstack((scaled_remaining_columns, metadata_columns))
 
 # Apply to validation/test data
 #X_val_scaled = scaler.transform(X_val)
@@ -457,10 +543,10 @@ print(df_train_y.columns)
 # HYPERPARAMETER TUNING
 
 # Define hyperparameter grid
-param_ranges = {'max_depth': [2, 4, 6], # Depth of tree
-                'n_estimators': [50, 100, 200, 300], # Number of trees (too many = overfitting, too few = underfitting)
-                'learning_rate': [0.01, 0.1, 0.2], #[0,1]
-                #'gamma': [0, 10], # Regularization parameter [0,inf]
+param_ranges = {'max_depth': [5, 6, 7, 8], # Depth of tree
+                'n_estimators': [400, 500, 600, 700, 800], # Number of trees (too many = overfitting, too few = underfitting)
+                'learning_rate': [0.1, 0.15, 0.2], #[0,1]
+                'gamma': [0], # Regularization parameter, minimum loss reduction required to make split [0,inf]
                 #'lambda': [0, 10], # Regularization [1,inf]
                 #'alpha': [0, 10], # Regularization [0,inf]
                 #'colsample_bytree': [0.5, 1], # (0,1]  A smaller colsample_bytree value results in smaller and less complex models, which can help prevent overfitting. It is common to set this value between 0.5 and 1.
