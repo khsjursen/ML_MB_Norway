@@ -20,3 +20,5 @@ Models/Final_training/
 Models/Random_5fold
 Models/Custom_loss/
 Training_cluster
+Data/oggm_data
+Data/glacier_predictions
