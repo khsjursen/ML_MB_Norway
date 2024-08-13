@@ -355,50 +355,20 @@ df_train_X = df_train_X_reduce[[c for c in df_train_X_reduce if c not in ['id','
 df_train_y = df_train_final[['balance']]
 
 # Get arrays of features+metadata and targets
-#X_train_unnorm, y_train = df_train_X.values, df_train_y.values
 X_train, y_train = df_train_X.values, df_train_y.values
 
-# Normalize features
-# Using min-max scaling
+# USING CUSTOM ITERATOR TO SPLIT ON CYCLE OF YEARS
 
-# Initialize scaler
-#scaler = MinMaxScaler()
+# Add a 'fold' column to `df_train_final`, initializing to -1
+df_train_final['fold'] = -1
 
-# Extract metadata columns
-#metadata_columns = X_train_unnorm[:, -3:]
+# Get sorted list of unique years in the dataset
+unique_years = df_train_final['year'].sort_values().unique()
 
-# Extract remaining columns
-#remaining_columns = X_train_unnorm[:, :-3]
-
-# Apply MinMaxScaler to the remaining columns
-#scaled_remaining_columns = scaler.fit_transform(remaining_columns)
-
-# Combine scaled columns with metadata columns
-#X_train = np.hstack((scaled_remaining_columns, metadata_columns))
-
-# Apply to validation/test data
-#X_val_scaled = scaler.transform(X_val)
-#X_test_scaled = scaler.transform(X_test)
-
-# USING CUSTOM FOLD ITERATOR TO SPLIT ON ID AND YEAR
-
-# Define the year intervals for the folds
-year_intervals = [
-    (1960, 1969),  # Fold 1
-    (1970, 1979),  # Fold 2
-    (1980, 1994),  # Fold 3
-    (1995, 2009),  # Fold 4
-    (2010, 2021)   # Fold 5
-]
-
-# Add a 'fold' column based on the 'year' intervals
-def assign_fold(row):
-    for i, (start_year, end_year) in enumerate(year_intervals):
-        if start_year <= row['year'] <= end_year:
-            return i
-    return -1  # Return -1 if year is not in any interval (should not happen)
-
-df_train_final['fold'] = df_train_final.apply(assign_fold, axis=1)
+# Round-robin assignment of years to folds
+n_folds = 5
+for fold, year in enumerate(unique_years):
+    df_train_final.loc[df_train_final['year'] == year, 'fold'] = fold % n_folds
 
 # Verify that all rows have been assigned a valid fold
 if (df_train_final['fold'] == -1).any():
@@ -407,13 +377,13 @@ if (df_train_final['fold'] == -1).any():
 # Group by 'id' to maintain groups of rows with the same 'id'
 grouped = df_train_final.groupby('id')
 
-# Create indices for each fold
-folds = [([], []) for _ in range(5)]  # Initialize with 5 empty train/test index lists
+# Initialize folds with 5 empty train/test index lists
+folds = [([], []) for _ in range(n_folds)]
 
 # Distribute groups into folds
 for _, group in grouped:
     fold = group['fold'].iloc[0]  # All rows in group have the same fold
-    for fold_idx in range(5):
+    for fold_idx in range(n_folds):
         if fold == fold_idx:
             folds[fold_idx][1].extend(group.index)  # Assign group to test set of this fold
         else:
@@ -422,20 +392,7 @@ for _, group in grouped:
 # Convert lists to numpy arrays
 folds = [(np.array(train_indices), np.array(test_indices)) for train_indices, test_indices in folds]
 
-
-## Splitting the DataFrame into folds for cross-validation
-#folds = []
-#for fold in range(5):
-#    train_indices = df[df['fold'] != fold].index
-#    test_indices = df[df['fold'] == fold].index
-#    folds.append((train_indices, test_indices))
-
-# Fold iterator function
-#def get_fold_iterator(data, folds):
-#    for train_indices, test_indices in folds:
-#        yield data.iloc[train_indices], data.iloc[test_indices]
-
-# Define the custom cross-validator
+# Custom cross-validator definition
 class CustomFoldIterator(BaseCrossValidator):
     def __init__(self, fold_indices):
         self.fold_indices = fold_indices
@@ -447,28 +404,110 @@ class CustomFoldIterator(BaseCrossValidator):
     def get_n_splits(self, X=None, y=None, groups=None):
         return len(self.fold_indices)
 
-# Setup and Execute GridSearchCV
+# Setup and Execute GridSearchCV (example)
 custom_cv = CustomFoldIterator(folds)
 
 # Create splits
 splits_s = list(custom_cv.split(X_train, y_train))
 
-# Convert Int64Index to numpy arrays 
-splits_s = [(np.array(train_indices), np.array(test_indices)) for (train_indices, test_indices) in splits_s]
-
 # Print number of instances in each split
 for i, (train_indices, test_indices) in enumerate(splits_s):
     print(f"Fold {i+1} - Train: {len(train_indices)}, Test: {len(test_indices)}")
 
-# Check fold indices for training/validation data
+# Check fold indices for training/validation data and extract years
 fold_indices = []
-
 for i, (train_index, val_index) in enumerate(splits_s):
-    print(f"Fold {i+1}")
-    print("TRAIN:", train_index)
-    print("VALIDATION:", val_index)
-    print("shape(train):", train_index.shape, "shape(validation):", val_index.shape)
+    print(f"\nFold {i+1}")
+    
+    # Extract and sort years from train and validation sets
+    train_years = np.sort(df_train_final.loc[train_index, 'year'].unique())
+    val_years = np.sort(df_train_final.loc[val_index, 'year'].unique())
+    
+    print(f"TRAIN: {train_index}")
+    print(f"VALIDATION: {val_index}")
+    print(f"shape(train): {train_index.shape}, shape(validation): {val_index.shape}")
+    
+    print(f"Number of unique YEARS in TRAIN set: {len(train_years)}, Years: {train_years}")
+    print(f"Number of unique YEARS in VALIDATION set: {len(val_years)}, Years: {val_years}")
+    
     fold_indices.append((train_index, val_index))
+
+# USING CUSTOM FOLD ITERATOR TO SPLIT ON ID AND YEAR
+
+# Define the year intervals for the folds
+#year_intervals = [
+#    (1960, 1969),  # Fold 1
+#    (1970, 1979),  # Fold 2
+#    (1980, 1994),  # Fold 3
+#    (1995, 2009),  # Fold 4
+#    (2010, 2021)   # Fold 5
+#]
+
+# Add a 'fold' column based on the 'year' intervals
+#def assign_fold(row):
+#    for i, (start_year, end_year) in enumerate(year_intervals):
+#        if start_year <= row['year'] <= end_year:
+#            return i
+#    return -1  # Return -1 if year is not in any interval (should not happen)
+
+#df_train_final['fold'] = df_train_final.apply(assign_fold, axis=1)
+
+# Verify that all rows have been assigned a valid fold
+#if (df_train_final['fold'] == -1).any():
+#    raise ValueError("Some rows have not been assigned a valid fold")
+
+# Group by 'id' to maintain groups of rows with the same 'id'
+#grouped = df_train_final.groupby('id')
+
+# Create indices for each fold
+#folds = [([], []) for _ in range(5)]  # Initialize with 5 empty train/test index lists
+
+# Distribute groups into folds
+#for _, group in grouped:
+#    fold = group['fold'].iloc[0]  # All rows in group have the same fold
+#    for fold_idx in range(5):
+#        if fold == fold_idx:
+#            folds[fold_idx][1].extend(group.index)  # Assign group to test set of this fold
+#        else:
+#            folds[fold_idx][0].extend(group.index)  # Assign group to train set of other folds
+
+# Convert lists to numpy arrays
+#folds = [(np.array(train_indices), np.array(test_indices)) for train_indices, test_indices in folds]
+
+# Define the custom cross-validator
+#class CustomFoldIterator(BaseCrossValidator):
+#    def __init__(self, fold_indices):
+#        self.fold_indices = fold_indices
+#
+#    def split(self, X, y=None, groups=None):
+#        for train_indices, test_indices in self.fold_indices:
+#            yield train_indices, test_indices
+
+#    def get_n_splits(self, X=None, y=None, groups=None):
+#        return len(self.fold_indices)
+
+# Setup and Execute GridSearchCV
+#custom_cv = CustomFoldIterator(folds)
+
+# Create splits
+#splits_s = list(custom_cv.split(X_train, y_train))
+
+# Convert Int64Index to numpy arrays 
+#splits_s = [(np.array(train_indices), np.array(test_indices)) for (train_indices, test_indices) in splits_s]
+
+# Print number of instances in each split
+#for i, (train_indices, test_indices) in enumerate(splits_s):
+#    print(f"Fold {i+1} - Train: {len(train_indices)}, Test: {len(test_indices)}")
+
+# Check fold indices for training/validation data
+#fold_indices = []
+
+#for i, (train_index, val_index) in enumerate(splits_s):
+#    print(f"Fold {i+1}")
+#    print("TRAIN:", train_index)
+#    print("VALIDATION:", val_index)
+#    print("shape(train):", train_index.shape, "shape(validation):", val_index.shape)
+#    fold_indices.append((train_index, val_index))
 
 # USE GROUPKFOLD TO SPLIT ON ID
 
