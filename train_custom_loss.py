@@ -343,6 +343,8 @@ df_train_annual_final.reset_index(drop=True, inplace=True)
 data_list = [df_train_summer_final, df_train_winter_final, df_train_annual_final]
 df_train_final = pd.concat(data_list)
 
+df_train_final.reset_index(drop=True, inplace=True)
+
 # Select features for training
 df_train_X_reduce = df_train_final.drop(['balance','year','BREID'], axis=1)
 

@@ -98,97 +98,6 @@ def custom_mse_metadata(y_true, y_pred, metadata):
 
     return gradients, hessians
 
-
-def custom_phl_metadata(y_true, y_pred, metadata):
-    """
-    Custom Mean Squared Error (MSE) objective function for evaluating monthly predictions with respect to 
-    seasonally or annually aggregated observations.
-    
-    For use in cases where predictions are done on a monthly time scale and need to be aggregated to be
-    compared with the true aggregated seasonal or annual value. Aggregations are performed according to a
-    unique ID provided by metadata. The function computes gradients and hessians 
-    used in gradient boosting methods, specifically for use with the XGBoost library's custom objective 
-    capabilities.
-    
-    Parameters
-    ----------
-    y_true : numpy.ndarray
-        True (seasonally or annually aggregated) values for each instance. For a unique ID, 
-        values are repeated n_months times across the group, e.g. the annual mass balance for a group
-        of 12 monthly predictions with the same unique ID is repeated 12 times. Before calculating the 
-        loss, the mean over the n unique IDs is taken.
-    
-    y_pred : numpy.ndarray
-        Predicted monthly values. These predictions will be aggregated according to the 
-        unique ID before calculating the loss, e.g. 12 monthly predictions with the same unique ID is
-        aggregated for evaluation against the true annual value.
-    
-    metadata : numpy.ndarray
-        An ND numpy array containing metadata for each monthly prediction. The first column is mandatory 
-        and represents the ID of the aggregated group to which each instance belongs. Each group identified 
-        by a unique ID will be aggregated together for the loss calculation. The following columns in the 
-        metadata can include additional information for each instance that may be useful for tracking or further 
-        processing but are not used in the loss calculation, e.g. number of months to be aggregated or the name 
-        of the month.
-        
-        ID (column 0): An integer that uniquely identifies the group which the instance belongs to.
-            
-    Returns
-    -------
-    gradients : numpy.ndarray
-        The gradient of the loss with respect to the predictions y_pred. This array has the same shape 
-        as y_pred.
-    
-    hessians : numpy.ndarray
-        The second derivative (hessian) of the loss with respect to the predictions y_pred. For MSE loss, 
-        the hessian is constant and thus this array is filled with ones, having the same shape as y_pred.
-    """
-            
-    # Initialize gradients and hessians
-    gradients = np.zeros_like(y_pred)
-    hessians = np.ones_like(y_pred)
-
-    # Get the aggregated predictions and the mean score based on the true labels, and predicted labels
-    # based on the metadata.
-    #y_pred_agg, y_true_mean, grouped_ids, df_metadata = CustomXGBoostRegressor._create_metadata_scores(metadata, y_true, y_pred)
-    df_metadata = pd.DataFrame(metadata, columns=['ID', 'N_MONTHS', 'MONTH'])
-
-    # Aggregate y_pred and y_true for each group
-    grouped_ids = df_metadata.assign(y_true=y_true, y_pred=y_pred).groupby('ID')
-    y_pred_agg = grouped_ids['y_pred'].sum().values
-    y_true_mean = grouped_ids['y_true'].mean().values
-
-    z = y_pred_agg - y_true_mean
-
-    # Delta set to 1 for mae approximation
-    # TO-DO: Possibly use 1 as default and have user choose delta
-    delta = 1
-
-    scale = 1 + (z/delta)**2
-    scale_sqrt = np.sqrt(scale)
-
-    # Compute gradients
-    gradients_agg = z/scale_sqrt
-
-    # Compute hessians
-    hessians_agg = 1/(scale*scale_sqrt)
-
-    # Create a mapping from ID to gradient
-    gradient_map = dict(zip(grouped_ids.groups.keys(), gradients_agg))
-
-    # Create a mapping from ID to hessians
-    hessian_map = dict(zip(grouped_ids.groups.keys(), hessians_agg))
-
-    # Assign gradients to corresponding indices
-    df_metadata['gradient'] = df_metadata['ID'].map(gradient_map)
-    gradients[df_metadata.index] = df_metadata['gradient'].values
-
-    # Assign hessians to corresponding indices
-    df_metadata['hessian'] = df_metadata['ID'].map(hessian_map)
-    hessians[df_metadata.index] = df_metadata['hessian'].values
-
-    return gradients, hessians
-
 # Define custom XGBRegressor class
 # Updated based on version from Julian
 class CustomXGBRegressor(XGBRegressor):
@@ -228,7 +137,6 @@ class CustomXGBRegressor(XGBRegressor):
         # Define closure that captures metadata for use in custom objective
         def custom_objective(y_true, y_pred):
             return custom_mse_metadata(y_true, y_pred, metadata)
-            #return custom_phl_metadata(y_true, y_pred, metadata)
 
         # Set custom objective
         self.set_params(objective=custom_objective)
@@ -264,11 +172,7 @@ class CustomXGBRegressor(XGBRegressor):
         # Compute mse 
         mse = ((y_pred_agg - y_true_mean) ** 2).mean()
 
-        # Compute mae
-        #mae = (abs(y_pred_agg - y_true_mean)).mean()
-
         return -mse # Return negative because GridSearchCV maximizes score
-        #return -mae      
 
 # Get and prepare data 
 # Specify filepaths and filenames.
@@ -439,6 +343,8 @@ df_train_annual_final.reset_index(drop=True, inplace=True)
 data_list = [df_train_summer_final, df_train_winter_final, df_train_annual_final]
 df_train_final = pd.concat(data_list)
 
+df_train_final.reset_index(drop=True, inplace=True)
+
 # Select features for training
 df_train_X_reduce = df_train_final.drop(['balance','year','BREID'], axis=1)
 
@@ -583,68 +489,18 @@ print(X_train.shape)
 print(df_train_X.columns)
 print(df_train_y.columns)
 
-# # TRAIN MODEL WITH SMALLER SAMPLE:
-
-# # Get random sample of annual, summer, winter
-# df_train_annual_sample = df_train_annual_clean.sample(n=400, random_state=42)
-# df_train_summer_sample = df_train_summer_clean.sample(n=400, random_state=42)
-# df_train_winter_sample = df_train_winter_clean.sample(n=400, random_state=42)
-
-# # Reshape dataframes to monthly resolution
-# df_train_summer_sample_final = reshape_dataset_monthly(df_train_summer_sample, id_vars, variables, summer_months_order)
-# df_train_winter_sample_final = reshape_dataset_monthly(df_train_winter_sample, id_vars, variables, winter_months_order)
-# df_train_annual_sample_final = reshape_dataset_monthly(df_train_annual_sample, id_vars, variables, annual_months_order)
-
-# # Combine training data in one dataframe
-# df_train_summer_sample_final.reset_index(drop=True, inplace=True)
-# df_train_winter_sample_final.reset_index(drop=True, inplace=True)
-# df_train_annual_sample_final.reset_index(drop=True, inplace=True)
-
-# data_list = [df_train_summer_sample_final, df_train_winter_sample_final, df_train_annual_sample_final]
-# df_train_sample_final = pd.concat(data_list)
-# #df_train_sample_final
-
-# # Select features for training
-# df_train_X_reduce = df_train_sample_final.drop(['balance','year','BREID'], axis=1)
-
-# # Move id and n_months to the end of the dataframe (these are to be used as metadata)
-# df_train_X_sample = df_train_X_reduce[[c for c in df_train_X_reduce if c not in ['id','n_months','month']] + ['id','n_months','month']]
-
-# # Select labels for training
-# df_train_y_sample = df_train_sample_final[['balance']]
-
-# # Get arrays of features+metadata and targets
-# X_train_s, y_train_s = df_train_X_sample.values, df_train_y_sample.values
-
-# # Get glacier IDs from training dataset (in the order of which they appear in training dataset).
-# # gp_s is an array with shape equal to the shape of X_train_s and y_train_s.
-# gp_s_s = np.array(df_train_sample_final['id'].values)
-
-# # Use five folds
-# group_kf_s = GroupKFold(n_splits=5)
-
-# # Split into folds according to group by glacier ID.
-# # For each unique glacier ID, indices in gp_s indicate which rows in X_train_s and y_train_s belong to the glacier.
-# splits_s_s = list(group_kf_s.split(X_train_s, y_train_s, gp_s_s))
-
-# print(len(gp_s_s))
-# print(y_train_s.shape)
-# print(X_train_s.shape)
-# print(df_train_X_sample.columns)
-# print(df_train_y_sample.columns)
-
 # HYPERPARAMETER TUNING
 
 # Define hyperparameter grid
-param_ranges = {'max_depth': [3, 4, 5, 6, 7], # Depth of tree
-                'n_estimators': [100, 200, 300, 400, 500], # Number of trees (too many = overfitting, too few = underfitting)
-                'learning_rate': [0.05, 0.1, 0.15, 0.2], #[0,1]
+param_ranges = {'max_depth': [3, 4],#, 5, 6, 7], # Depth of tree
+                'n_estimators': [100, 200],#, 300, 400, 500], # Number of trees (too many = overfitting, too few = underfitting)
+                'learning_rate': [0.05, 0.1],#, 0.15, 0.2], #[0,1]
                 'gamma': [0], # Regularization parameter, minimum loss reduction required to make split [0,inf]
                 #'lambda': [0, 10], # Regularization [1,inf]
                 #'alpha': [0, 10], # Regularization [0,inf]
                 #'colsample_bytree': [0.5, 1], # (0,1]  A smaller colsample_bytree value results in smaller and less complex models, which can help prevent overfitting. It is common to set this value between 0.5 and 1.
                 #'subsample': [0.5, 1], # (0,1] common to set this value between 0.5 and 1
-                'min_child_weight': [0, 5, 10], # [0,inf]
+                #'min_child_weight': [0, 5, 10], # [0,inf]
                 'random_state': [23]
                } 
 #param_ranges = {'max_depth':[2],
