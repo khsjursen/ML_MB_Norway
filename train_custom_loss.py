@@ -636,15 +636,15 @@ print(df_train_y.columns)
 # HYPERPARAMETER TUNING
 
 # Define hyperparameter grid
-param_ranges = {'max_depth': [3, 4, 5, 6, 7], # Depth of tree
-                'n_estimators': [100, 200, 300, 400, 500], # Number of trees (too many = overfitting, too few = underfitting)
-                'learning_rate': [0.05, 0.1, 0.15, 0.2], #[0,1]
+param_ranges = {'max_depth': [3, 4],#, 5, 6, 7], # Depth of tree
+                'n_estimators': [100, 200],#, 300, 400, 500], # Number of trees (too many = overfitting, too few = underfitting)
+                'learning_rate': [0.05, 0.1],#, 0.15, 0.2], #[0,1]
                 'gamma': [0], # Regularization parameter, minimum loss reduction required to make split [0,inf]
                 #'lambda': [0, 10], # Regularization [1,inf]
                 #'alpha': [0, 10], # Regularization [0,inf]
                 #'colsample_bytree': [0.5, 1], # (0,1]  A smaller colsample_bytree value results in smaller and less complex models, which can help prevent overfitting. It is common to set this value between 0.5 and 1.
                 #'subsample': [0.5, 1], # (0,1] common to set this value between 0.5 and 1
-                'min_child_weight': [0, 5, 10], # [0,inf]
+                #'min_child_weight': [0, 5, 10], # [0,inf]
                 'random_state': [23]
                } 
 #param_ranges = {'max_depth':[2],
