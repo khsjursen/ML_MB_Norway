@@ -22,3 +22,5 @@ Models/Custom_loss/
 Training_cluster
 Data/oggm_data
 Data/glacier_predictions
+Data/NVE_gw_mb
+Data/ERA5-Land_mon_avg_1950_2022_Norway
