@@ -162,5 +162,5 @@ def main(train_dir):
                 print(f"No DEM found in {subdir_path}")
 
 if __name__ == '__main__':
-    train_dir = 'C:/Users/kasj/ML_MB_Norway/Data/oggm_data/per_glacier/train'
+    train_dir = 'C:/Users/kasj/ML_MB_Norway/Data/oggm_data/per_glacier/test'
     main(train_dir)
