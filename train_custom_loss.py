@@ -532,8 +532,8 @@ print(df_train_y.columns)
 
 # Define hyperparameter grid
 param_ranges = {'max_depth': [3, 4, 5, 6, 7], # Depth of tree
-                'n_estimators': [100, 200, 300, 400, 500], # Number of trees (too many = overfitting, too few = underfitting)
-                'learning_rate': [0.05, 0.1, 0.15], #[0,1]
+                'n_estimators': [50, 100, 200, 300, 400, 500], # Number of trees (too many = overfitting, too few = underfitting)
+                'learning_rate': [0.01, 0.05, 0.1, 0.15], #[0,1]
                 'gamma': [0], # Regularization parameter, minimum loss reduction required to make split [0,inf]
                 #'lambda': [0, 10], # Regularization [1,inf]
                 #'alpha': [0, 10], # Regularization [0,inf]
