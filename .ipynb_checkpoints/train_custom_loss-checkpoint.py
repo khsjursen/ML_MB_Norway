@@ -177,7 +177,7 @@ class CustomXGBRegressor(XGBRegressor):
 # Get and prepare data 
 # Specify filepaths and filenames.
 loc = 'local'
-type = 'annual' # 'all': all data, 'seasonal': seasonal data, 'winter': annual+winter data, 'annual': only annual
+type = 'annual' # 'all': all data, 'seasonal': seasonal data, 'annwinter': annual+winter data, 'annsummer': annual+summer, 'annual': only annual, 'summer': only summer, 'winter': only winter
 
 if loc == 'cryocloud':
     filepath = '/home/jovyan/ML_MB_Norway_data/'
@@ -341,14 +341,18 @@ df_train_summer_final.reset_index(drop=True, inplace=True)
 df_train_winter_final.reset_index(drop=True, inplace=True)
 df_train_annual_final.reset_index(drop=True, inplace=True)
 
-if type == 'winter':
+if type == 'annwinter':
     data_list = [df_train_winter_final, df_train_annual_final]
-elif type == 'summer':
+elif type == 'annsummer':
     data_list = [df_train_summer_final, df_train_annual_final]
 elif type == 'seasonal':
     data_list = [df_train_winter_final, df_train_summer_final]
 elif type == 'annual':
     data_list = [df_train_annual_final]
+elif type == 'winter':
+    data_list = [df_train_winter_final]
+elif type == 'summer':
+    data_list = [df_train_summer_final]
 else: # all
     data_list = [df_train_summer_final, df_train_winter_final, df_train_annual_final]
 
