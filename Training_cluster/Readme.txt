@@ -5,4 +5,6 @@ New folder with datetime stamp created when saving.
 2024-10-24-09-45-30: Trained on cluster. Only annual and Winter data. Using skyview factor.
 2024-10-25_13-31-32: Trained on cluster. Only seasonal data. Using skyview factor.
 2024-10-25_15-05-53: Trained on cluster. Only annual and summer data. Using skyview factor.
-2024-10-25_XXX: Trained on cluster. Only annual data. Using skyview factor.
+2024-10-25_15-40-30: Trained on cluster. Only annual data. Using skyview factor.
+2024-10-25_16-09-23: Trained on cluster. Only winter data. Using skyview factor.
+2024-10-25_XX: Trained on cluster. Only summer data. Using skyview factor.
