@@ -177,6 +177,7 @@ class CustomXGBRegressor(XGBRegressor):
 # Get and prepare data 
 # Specify filepaths and filenames.
 loc = 'local'
+type = 'winter' # 'all': all data, 'seasonal': seasonal data, 'winter': annual+winter data
 
 if loc == 'cryocloud':
     filepath = '/home/jovyan/ML_MB_Norway_data/'
@@ -340,7 +341,15 @@ df_train_summer_final.reset_index(drop=True, inplace=True)
 df_train_winter_final.reset_index(drop=True, inplace=True)
 df_train_annual_final.reset_index(drop=True, inplace=True)
 
-data_list = [df_train_summer_final, df_train_winter_final, df_train_annual_final]
+if type == 'winter':
+    data_list = [df_train_winter_final, df_train_annual_final]
+elif type == 'summer':
+    data_list = [df_train_summer_final, df_train_annual_final]
+elif type == 'seasonal':
+    data_list = [df_train_winter_final, df_train_summer_final]
+else: # all
+    data_list = [df_train_summer_final, df_train_winter_final, df_train_annual_final]
+
 df_train_final = pd.concat(data_list)
 
 df_train_final.reset_index(drop=True, inplace=True)
@@ -533,13 +542,13 @@ print(df_train_y.columns)
 # Define hyperparameter grid
 param_ranges = {'max_depth': [3, 4, 5, 6, 7], # Depth of tree
                 'n_estimators': [100, 200, 300, 400, 500], # Number of trees (too many = overfitting, too few = underfitting)
-                'learning_rate': [0.05, 0.1, 0.15], #[0,1]
+                'learning_rate': [0.01, 0.05, 0.1, 0.15], #[0,1]
                 'gamma': [0], # Regularization parameter, minimum loss reduction required to make split [0,inf]
                 #'lambda': [0, 10], # Regularization [1,inf]
                 #'alpha': [0, 10], # Regularization [0,inf]
                 #'colsample_bytree': [0.5, 1], # (0,1]  A smaller colsample_bytree value results in smaller and less complex models, which can help prevent overfitting. It is common to set this value between 0.5 and 1.
                 #'subsample': [0.5, 1], # (0,1] common to set this value between 0.5 and 1
-                'min_child_weight': [0], # [0,inf]
+                'min_child_weight': [0, 5, 10], # [0,inf]
                 'random_state': [23]
                } 
 #param_ranges = {'max_depth':[2],
@@ -549,7 +558,7 @@ param_ranges = {'max_depth': [3, 4, 5, 6, 7], # Depth of tree
 
 xgb_model = CustomXGBRegressor()
 
-n_jobs = 45
+n_jobs = 20
 
 clf = GridSearchCV(xgb_model, 
                    param_ranges, 

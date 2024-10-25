@@ -177,6 +177,7 @@ class CustomXGBRegressor(XGBRegressor):
 # Get and prepare data 
 # Specify filepaths and filenames.
 loc = 'local'
+type = 'winter' # 'all': all data, 'seasonal': seasonal data, 'winter': annual+winter data
 
 if loc == 'cryocloud':
     filepath = '/home/jovyan/ML_MB_Norway_data/'
@@ -340,7 +341,15 @@ df_train_summer_final.reset_index(drop=True, inplace=True)
 df_train_winter_final.reset_index(drop=True, inplace=True)
 df_train_annual_final.reset_index(drop=True, inplace=True)
 
-data_list = [df_train_summer_final, df_train_winter_final, df_train_annual_final]
+if type == 'winter':
+    data_list = [df_train_winter_final, df_train_annual_final]
+elif type == 'summer':
+    data_list = [df_train_summer_final, df_train_annual_final]
+elif type == 'seasonal':
+    data_list = [df_train_winter_final, df_train_summer_final]
+else: # all
+    data_list = [df_train_summer_final, df_train_winter_final, df_train_annual_final]
+
 df_train_final = pd.concat(data_list)
 
 df_train_final.reset_index(drop=True, inplace=True)
