@@ -41,6 +41,60 @@ def reshape_dataset_monthly(df, id_vars, variables, months_order):
 
 
 #%%%%% PREDICTION PROCESSING %%%%%%%
+
+# Get true values (means) and predicted values (aggregates)
+def get_ytrue_y_pred_agg(y_true, y_pred, X):
+    
+    # Extract the metadata
+    metadata = X[:, -3:]  
+    unique_ids = np.unique(metadata[:, 0]) 
+    y_pred_agg_all = []
+    y_true_mean_all = []
+    
+    for uid in unique_ids:
+        # Indexes for the current ID
+        indexes = metadata[:, 0] == uid
+        # Aggregate y_pred for the current ID
+        y_pred_agg = np.sum(y_pred[indexes])
+        y_pred_agg_all.append(y_pred_agg)
+        # True value is the mean of true values for the group
+        y_true_mean = np.mean(y_true[indexes])
+        y_true_mean_all.append(y_true_mean)
+
+    y_pred_agg_all_arr = np.array(y_pred_agg_all)
+    y_true_mean_all_arr = np.array(y_true_mean_all)
+    
+    return y_true_mean_all_arr, y_pred_agg_all_arr
+
+    
+# Get true values (means) and predicted values (aggregates) for a given season
+def get_ytrue_y_pred_agg_season(y_true, y_pred, X, months=12):
+
+    # Get values for the given season
+    mask = X[:, -2] == months  
+    X = X[mask] 
+    
+    # Extract the metadata
+    metadata = X[:, -3:] 
+    unique_ids = np.unique(metadata[:, 0]) 
+    y_pred_agg_all = []
+    y_true_mean_all = []
+    
+    for uid in unique_ids:
+        # Indexes for the current ID
+        indexes = metadata[:, 0] == uid
+        # Aggregate y_pred for the current ID
+        y_pred_agg = np.sum(y_pred[indexes])
+        y_pred_agg_all.append(y_pred_agg)
+        # True value is the mean of true values for the group
+        y_true_mean = np.mean(y_true[indexes])
+        y_true_mean_all.append(y_true_mean)
+
+    y_pred_agg_all_arr = np.array(y_pred_agg_all)
+    y_true_mean_all_arr = np.array(y_true_mean_all)
+    
+    return y_true_mean_all_arr, y_pred_agg_all_arr    
+    
     
 # Get mass balance predictions for a given season (winter, summer annual)
 def get_prediction_per_season(X_train_s, y_train_s, splits_s, best_model, months=12):
@@ -79,4 +133,6 @@ def get_prediction_per_season_test(X_test, y_test, best_model, months=12):
     y_pred_crop = y_pred[indices]
 
     return y_test_crop, y_pred_crop
+
+
 

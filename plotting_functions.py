@@ -419,7 +419,7 @@ def plot_prediction_per_season(y_test_all, y_pred_all, season='Annual'):
 
     plt.tight_layout()
     plt.show()
-    
+
 
 #%%%%%%%%% FEATURE IMPORTANCE %%%%%%%%%%%%%%
 
