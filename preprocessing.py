@@ -22,8 +22,10 @@ import pandas as pd
 #%% Read files
 
 # Specify filepaths and filenames.
-filepath = 'C:/Users/kasj/OneDrive - Høgskulen på Vestlandet/Data/NVE_stake_data/'
-filename = '2022-10-12_stake_mb_Hydra2_corrected.csv'
+#filepath = 'C:/Users/kasj/OneDrive - Høgskulen på Vestlandet/Data/NVE_stake_data/'
+filepath = 'C:/Users/kasj/ML_MB_Norway/Data/'
+#filename = '2022-10-12_stake_mb_Hydra2_corrected.csv'
+filename = '2023-08-28_stake_mb_Hydra2_corrected.csv'
 
 # Load data.
 data = pd.read_csv(filepath + filename, sep=';')
@@ -32,6 +34,9 @@ data = pd.read_csv(filepath + filename, sep=';')
 data = data.rename(columns={"utm_east3": "utm_east_approx", 
                             "utm_north4": "utm_north_approx", 
                             "altitude5": "altitude_approx"})
+
+# Remove erroneous mass balance value
+data = data[data['balance_winter']!=9.99]
 
 # New columns indicating if location/altitude is approximate. Fill new column with "N" for
 # location/altitude is not approximate.
@@ -66,13 +71,13 @@ data['diff_north'] = data['utm_north'] - data['utm_north_approx']
 data['diff_east'] = data['utm_east'] - data['utm_east_approx']
 data['diff_altitude'] = data['altitude'] - data['altitude_approx']
 
-# 4194 of 4201 points. A total of 7 rows are missing both altitude and altitude_approx.
+# 4193 of 4200 points. A total of 7 rows are missing both altitude and altitude_approx.
 data_crop_alt = data[data['diff_altitude'].notna()]
 
-# 4053 of 4201 points. A total of 148 rows are missing both exact loc and approx loc.
+# 4052 of 4200 points. A total of 148 rows are missing both exact loc and approx loc.
 data_crop_loc = data[data['diff_east'].notna()]
 
-# Cleaned dataset with 4046 instances. A total of 155 points are either missing 
+# Cleaned dataset with 4045 instances. A total of 155 points are either missing 
 # both exact and approximate coordinates or altitude.
 data_crop = data_crop_alt[data_crop_alt['diff_east'].notna()]
 
@@ -81,6 +86,8 @@ data_crop['diff_netto'] = data_crop['balance_netto'] - (data_crop['balance_winte
 
 # Save cropped dataset
 #data_crop.to_csv("C:/Users/kasj/ML_MB_Norway/Data/stake_mb_norway_cleaned.csv")
+
+
 
 #%% Stats
 
