@@ -20,7 +20,6 @@ Models/Final_training/
 Models/Random_5fold
 Models/Custom_loss/
 src/.ipynb_checkpoints/
-src/Training_cluster/
 src/Data/oggm_data
 src/Data/glacier_predictions
 src/Data/NVE_gw_mb
