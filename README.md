@@ -1,7 +1,7 @@
 # ML_MB_Norway
 Machine learning for glacier mass balance modelling in Norway.
 
-Repository for manuscript:
+Repository for manuscript: **Machine learning improves seasonal mass balance prediction for unmonitored glaciers** by Sjursen et al. (submitted to The Cryosphere)
 
 Dataset of point mass balance for glaciers in Norway used data used in this study can be found at:
 https://doi.org/10.58059/sjse-6w92
