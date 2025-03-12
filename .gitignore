@@ -19,6 +19,7 @@ Models/Random_5fold_ann+seas/
 Models/Final_training/
 Models/Random_5fold
 Models/Custom_loss/
+src/.ipynb_checkpoints/
 src/Training_cluster/
 src/Data/oggm_data
 src/Data/glacier_predictions
