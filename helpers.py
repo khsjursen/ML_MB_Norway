@@ -35,11 +35,6 @@ def reshape_dataset_monthly(df, id_vars, variables, months_order):
 
     return(df_final)
 
-
-
-#%%%%% CROSS-VALIDATION %%%%%
-
-
 #%%%%% PREDICTION PROCESSING %%%%%%%
 
 # Get true values (means) and predicted values (aggregates)

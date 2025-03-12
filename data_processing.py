@@ -25,7 +25,6 @@ def get_ann_seas_train_test_datasets(data, test_glaciers):
     df_test_winter = glacier_data_winter[glacier_data_winter['BREID'].isin(test_glaciers)]
     df_test_summer = glacier_data_summer[glacier_data_summer['BREID'].isin(test_glaciers)]
 
-
     # Get training dataset for each of annual, winter and summer mass balance
     df_train_annual = glacier_data_annual[~glacier_data_annual['BREID'].isin(test_glaciers)]
     df_train_winter = glacier_data_winter[~glacier_data_winter['BREID'].isin(test_glaciers)]

@@ -458,12 +458,11 @@ for i, (train_index, val_index) in enumerate(splits_s):
 #    (2010, 2021)   # Fold 5
 #]
 
-# Add a 'fold' column based on the 'year' intervals
 #def assign_fold(row):
 #    for i, (start_year, end_year) in enumerate(year_intervals):
 #        if start_year <= row['year'] <= end_year:
 #            return i
-#    return -1  # Return -1 if year is not in any interval (should not happen)
+#    return -1  # Return -1 if year not in any interval
 
 #df_train_final['fold'] = df_train_final.apply(assign_fold, axis=1)
 
@@ -475,7 +474,7 @@ for i, (train_index, val_index) in enumerate(splits_s):
 #grouped = df_train_final.groupby('id')
 
 # Create indices for each fold
-#folds = [([], []) for _ in range(5)]  # Initialize with 5 empty train/test index lists
+#folds = [([], []) for _ in range(5)]  
 
 # Distribute groups into folds
 #for _, group in grouped:
@@ -501,7 +500,6 @@ for i, (train_index, val_index) in enumerate(splits_s):
 #    def get_n_splits(self, X=None, y=None, groups=None):
 #        return len(self.fold_indices)
 
-# Setup and Execute GridSearchCV
 #custom_cv = CustomFoldIterator(folds)
 
 # Create splits
@@ -510,7 +508,6 @@ for i, (train_index, val_index) in enumerate(splits_s):
 # Convert Int64Index to numpy arrays 
 #splits_s = [(np.array(train_indices), np.array(test_indices)) for (train_indices, test_indices) in splits_s]
 
-# Print number of instances in each split
 #for i, (train_indices, test_indices) in enumerate(splits_s):
 #    print(f"Fold {i+1} - Train: {len(train_indices)}, Test: {len(test_indices)}")
 
@@ -557,10 +554,6 @@ param_ranges = {'max_depth': [3, 4, 5, 6, 7], # Depth of tree
                 'min_child_weight': [0, 5, 10], # [0,inf]
                 'random_state': [23]
                } 
-#param_ranges = {'max_depth':[2],
-#                'n_estimators': [50],
-#                'learning_rate':[0.3]
-#               }
 
 xgb_model = CustomXGBRegressor()
 

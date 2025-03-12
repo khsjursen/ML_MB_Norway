@@ -113,7 +113,7 @@ def train_xgb_model_no_plot(X, y, idc_list, params, n_jobs=4, scorer='neg_mean_s
                        cv=idc_list, # Int or iterator (default for int is kfold)
                        verbose=2, # Controls number of messages
                        n_jobs=n_jobs, # No of parallell jobs
-                       scoring=scorer, # Can use multiple metrics
+                       scoring=scorer, 
                        refit=True, # Default True. For multiple metric evaluation, refit must be str denoting scorer to be used 
                        #to find the best parameters for refitting the estimator.
                        return_train_score=return_train) # Default False. If False, cv_results_ will not include training scores.
