@@ -22,7 +22,7 @@ https://doi.org/10.58059/sjse-6w92
 0.6.1_compute_skyview.py and 0.6.2_add_skyview_factor.ipynb - Compute and add the skyview factor as a feature.
 
 ### 1 Data exploration
-1.1_data_exploration.ipynb - Scipt for data exploration.
+1.1_data_exploration.ipynb - Scipt for data exploration.\
 &emsp; ***Figure 2***
 
 ### 2 Model training and predictions
@@ -33,30 +33,30 @@ https://doi.org/10.58059/sjse-6w92
 2.2_model_predictions.ipynb - Predict mass Balance in each grid cell for each glacier and month using trained model.
 
 ### 3 Analysis and plotting scripts
-3.1_ML_model_performance_test.ipynb - Evaluate performance of trained model on test dataset. 
+3.1_ML_model_performance_test.ipynb - Evaluate performance of trained model on test dataset.\ 
 &emsp; ***Figure 5 and C1*** 
 
 3.2_prepare_model_comparison.ipynb - Process results from GloGEM, OGGM and PyGEM for model comparison. 
 
-3.3_model_comparison_point.ipynb - Model comparison on point mass balance. 
+3.3_model_comparison_point.ipynb - Model comparison on point mass balance.\ 
 &emsp; ***Figure 6*** 
 
-3.4_model_comparison_glacier_wide.ipynb - Model comparison on annual and seasonal glacier-wide mass balance. 
+3.4_model_comparison_glacier_wide.ipynb - Model comparison on annual and seasonal glacier-wide mass balance.\ 
 &emsp; ***Figure 8*** 
 
-3.5_model_comparison_monthly.ipynb - Model comparison on monthly glacier-wide mass balance. 
+3.5_model_comparison_monthly.ipynb - Model comparison on monthly glacier-wide mass balance.\ 
 &emsp; ***Figure 9*** 
 
-3.6_model_comparison_decadal.ipynb - Model comparison on decadal glacier-wide mass balance and using geodetic observations. 
+3.6_model_comparison_decadal.ipynb - Model comparison on decadal glacier-wide mass balance and using geodetic observations.\ 
 &emsp; ***Figure 10 and C3*** 
 
-3.7_model_comparison_regional.ipynb - Model comparison on time series of glacier-wide mass balance for different regions. 
+3.7_model_comparison_regional.ipynb - Model comparison on time series of glacier-wide mass balance for different regions.\ 
 &emsp; ***Figure C2*** 
 
-3.8_plot_mass_balance_gradients.ipynb - Model comparison on mass balance gradients. 
+3.8_plot_mass_balance_gradients.ipynb - Model comparison on mass balance gradients.\
 &emsp; ***Figure 7*** 
 
-3.9_plot_distributed_mass_balance.ipynb - Plots of predicted distributed mass balance and features for Tunsbergdalsbreen. 
+3.9_plot_distributed_mass_balance.ipynb - Plots of predicted distributed mass balance and features for Tunsbergdalsbreen.\ 
 &emsp; ***Figure 11*** 
 
 ## Note
