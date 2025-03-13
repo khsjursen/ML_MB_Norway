@@ -12,6 +12,11 @@ This repository is a prototype of the MassBalanceMachine. We recommend users int
 - **`src/Data`**: Minimal data files of point mass dataset and preprocessing steps.
 - **`src/Training_cluster`**: Files for trained model. 
 
+## Conda environments
+- **`environment.yml`**: Environment required to run most Notebooks.
+- **`oggm_recommended_env.yml`**: Environment for running data retrieval sith the OGGM pipeline (not available for Windows).
+- **`skyview_env.yml`**: Environment for computing skyview factor using the `rvt` package (requires Python 3.7)  
+
 ## Data
 Dataset of point mass balance for glaciers in Norway used data used in this study can be found at:
 https://doi.org/10.58059/sjse-6w92
