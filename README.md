@@ -1,6 +1,6 @@
 # ML_MB_Norway
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15021796.svg)](https://doi.org/10.5281/zenodo.15021796)
+[![DOI](https://zenodo.org/badge/609033248.svg)](https://doi.org/10.5281/zenodo.15021795)
 
 ## Overview
 Machine learning for glacier mass balance modeling in Norway.
