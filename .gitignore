@@ -9,7 +9,6 @@ Created on Thu Oct  1 20:18:22 2020
 __pycache__
 tests_tutorials.py
 src/Data/old_data
-src/Data/data_model_comparison
 Figures
 .virtual_documents
 Models/Block_glacier_5fold/
@@ -22,7 +21,6 @@ Models/Custom_loss/
 src/.ipynb_checkpoints/
 src/Data/oggm_data
 src/Data/glacier_predictions
-src/Data/NVE_gw_mb
 src/Data/ERA5-Land_mon_avg_1950_2022_Norway
 src/Data/2023-08-28_stake_mb_Hydra2_corrected.xlsx
 ML_MB_Norway_env.yml
