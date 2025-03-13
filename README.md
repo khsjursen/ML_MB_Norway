@@ -1,5 +1,7 @@
 # ML_MB_Norway
 
+![image](https://github.com/user-attachments/assets/14c0c4e7-a276-442e-8edc-68afcbc523dc)
+
 ## Overview
 Machine learning for glacier mass balance modeling in Norway.
 
