@@ -1,9 +1,22 @@
 # ML_MB_Norway
-Machine learning for glacier mass balance modelling in Norway.
 
-Repository for manuscript: **Machine learning improves seasonal mass balance prediction for unmonitored glaciers** by Sjursen et al. (submitted to The Cryosphere)
+## Overview
+Machine learning for glacier mass balance modeling in Norway.
 
+Repository for manuscript: **Machine learning improves seasonal mass balance prediction for unmonitored glaciers** by Sjursen et al. (to be submitted to The Cryosphere).
+
+This repository is a prototype of the MassBalanceMachine. We recommend users interested in applying and developing machine learning for glacier mass balance modelling to check out the MassBalanceMachine repository for the most recent version currently under Development: https://github.com/ODINN-SciML/MassBalanceMachine
+
+## Repository Structure
+- **`src/`**: Contains Notebooks for preprocessing, ML pipeline and analysis of results/figures.
+- **`src/Data`**: Minimal data files of point mass dataset and preprocessing steps.
+- **`src/Training_cluster`**: Files for trained model. 
+
+## Data
 Dataset of point mass balance for glaciers in Norway used data used in this study can be found at:
 https://doi.org/10.58059/sjse-6w92
 
-This repository is a prototype of the MassBalanceMachine. We recommend users interested in applying and developing machine learning for glacier mass balance modelling to check out the MassBalanceMachine repository for the most recent version currently under Development: https://github.com/ODINN-SciML/MassBalanceMachine
+Other data files used in the Notebooks can be found at: [insert DOI]
+
+##License
+This project is licensed under the terms of the MIT License. See LICENSE for details.
