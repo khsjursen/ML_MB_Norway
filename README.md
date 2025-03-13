@@ -21,7 +21,5 @@ This repository is a prototype of the MassBalanceMachine. We recommend users int
 Dataset of point mass balance for glaciers in Norway used data used in this study can be found at:
 https://doi.org/10.58059/sjse-6w92
 
-Other data files used in the Notebooks can be found at: [insert DOI]
-
 ## License
 This project is licensed under the terms of the MIT License. See LICENSE for details.
