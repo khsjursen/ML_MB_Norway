@@ -16,7 +16,7 @@ This repository is a prototype of the MassBalanceMachine. We recommend users int
 
 ## Conda environments
 - **`environment.yml`**: Environment required to run most Notebooks.
-- **`oggm_recommended_env.yml`**: Environment for running data retrieval sith the OGGM pipeline (not available for Windows).
+- **`oggm_recommended_env.yml`**: Environment for running data retreival with the OGGM pipeline (not available for Windows).
 - **`skyview_env.yml`**: Environment for computing skyview factor using the `rvt` package (requires Python 3.7)  
 
 ## Data
