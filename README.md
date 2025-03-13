@@ -9,7 +9,7 @@ This repository is a prototype of the MassBalanceMachine. We recommend users int
 
 ## Repository Structure
 - **`src/`**: Contains Notebooks for preprocessing, ML pipeline and analysis of results/figures.
-- **`src/Data`**: Minimal data files of point mass dataset and preprocessing steps.
+- **`src/Data`**: Data files of point mass dataset and preprocessing steps. Data files for model comparison.
 - **`src/Training_cluster`**: Files for trained model. 
 
 ## Conda environments
