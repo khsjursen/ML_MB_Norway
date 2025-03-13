@@ -23,5 +23,5 @@ https://doi.org/10.58059/sjse-6w92
 
 Other data files used in the Notebooks can be found at: [insert DOI]
 
-##License
+## License
 This project is licensed under the terms of the MIT License. See LICENSE for details.
