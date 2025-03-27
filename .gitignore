@@ -19,6 +19,7 @@ Models/Final_training/
 Models/Random_5fold
 Models/Custom_loss/
 src/.ipynb_checkpoints/
+src/scripts/.ipynb_checkpoints/
 src/Data/oggm_data
 src/Data/glacier_predictions
 src/Data/ERA5-Land_mon_avg_1950_2022_Norway
